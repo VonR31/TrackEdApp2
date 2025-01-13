@@ -5,7 +5,7 @@ import LoginForm from './components/auth/LoginForm';  // Adjust path if needed
 //import AdminPage from './components/admin/AdminPage';  // You can create this component for admin
 import TeacherPage from './components/teacher/TeacherPage';  // Create this page for teachers
 import StudentManagement from './components/teacher/StudentManagement';
-//import StudentDashboard from './components/student/StudentDashboard';  // Create this page for students
+import StudentDashboard from './components/student/StudentDashboard';  // Create this page for students
 
 function App() {
   return (
@@ -15,7 +15,7 @@ function App() {
         
         <Route path="/home" element={<TeacherPage />} />
         <Route path="/student-management" element={<StudentManagement />} />
-       
+        <Route path="/dashboard" element={<StudentDashboard />} />
       
       </Routes>
     </Router>
