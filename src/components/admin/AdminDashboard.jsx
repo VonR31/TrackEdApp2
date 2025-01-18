@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { AddTeacherForm, AddStudentForm, AddSectionForm, AddCourseForm } from './Forms';
+import UserAnalytics from './UserAnalytics';
 import TeachersView from './TeachersView';
 import StudentsView from './StudentsView';
 import SectionsView from './SectionsView';
@@ -137,9 +138,7 @@ const AdminDashboard = () => {
             <CardTitle>Analytics</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center text-gray-500">
-              Chart placeholder - Analytics data visualization would go here
-            </div>
+          <UserAnalytics darkMode={darkMode} />
           </CardContent>
         </Card>
       </div>

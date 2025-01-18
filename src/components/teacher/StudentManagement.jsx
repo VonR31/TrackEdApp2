@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
 import {
   Users, 
   User,
@@ -36,7 +37,7 @@ const StudentManagement = () => {
       id: 1, 
       name: "John Doe", 
       studentId: "2021-0001",
-      grades: { prelim: null, midterm: null, final: null },
+      grades: { midterm: null, final: null },
       attendance: [
         { date: "2024-01-10", status: "present" },
         { date: "2024-01-12", status: "present" },
@@ -47,7 +48,7 @@ const StudentManagement = () => {
       id: 2, 
       name: "Jane Smith", 
       studentId: "2021-0002",
-      grades: { prelim: null, midterm: null, final: null },
+      grades: { midterm: null, final: null },
       attendance: [
         { date: "2024-01-10", status: "present" },
         { date: "2024-01-12", status: "absent" },
@@ -56,11 +57,37 @@ const StudentManagement = () => {
     },
   ]);
 
-  const toggleTheme = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle("dark");
-    localStorage.setItem("theme", !darkMode ? "dark" : "light");
-  };
+  useEffect(() => {
+    // Check localStorage for theme
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else if (savedTheme === "light") {
+      setDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    }
+
+    
+    const handleResize = () => {
+      setCollapsed(window.innerWidth < 768);
+    };
+  
+    window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const toggleTheme = () => {
+      const newDarkMode = !darkMode;
+      setDarkMode(newDarkMode);
+      if (newDarkMode) {
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("theme", "dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        localStorage.setItem("theme", "light");
+      }
+    };
 
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -152,6 +179,22 @@ const StudentManagement = () => {
       </table>
     </div>
   );
+
+  const exportToExcel = () => {
+    const exportData = students.map((student) => ({
+      StudentID: student.studentId,
+      Name: student.name,
+      Midterm: student.grades.midterm !== null ? student.grades.midterm : 'N/A',
+      Final: student.grades.final !== null ? student.grades.final : 'N/A',
+      Attendance: student.attendance.map(a => `${a.date} (${a.status})`).join(", ")
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Student Data");
+
+    XLSX.writeFile(wb, "StudentData.xlsx");
+  };
 
   const renderContent = () => {
     if (selectedStudent) {
@@ -246,7 +289,6 @@ const StudentManagement = () => {
                       <tr className="border-b">
                         <th className="py-3 text-left">Name</th>
                         <th className="py-3 text-left">Student ID</th>
-                        <th className="py-3 text-center">Prelim</th>
                         <th className="py-3 text-center">Midterm</th>
                         <th className="py-3 text-center">Final</th>
                         <th className="py-3 text-center">Actions</th>
@@ -259,7 +301,6 @@ const StudentManagement = () => {
                         }`}>
                           <td className="py-3">{student.name}</td>
                           <td className="py-3">{student.studentId}</td>
-                          <td className="py-3 text-center">{student.grades.prelim !== null ? student.grades.prelim : '-'}</td>
                           <td className="py-3 text-center">{student.grades.midterm !== null ? student.grades.midterm : '-'}</td>
                           <td className="py-3 text-center">{student.grades.final !== null ? student.grades.final : '-'}</td>
                           <td className="py-3 text-center">
@@ -280,6 +321,12 @@ const StudentManagement = () => {
               )}
             </CardContent>
           </Card>
+          <button
+            onClick={exportToExcel} // Call export function
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+          Export
+          </button>
         </div>
       );
     };

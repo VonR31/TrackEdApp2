@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input, Button, Form, message } from 'antd';
 
@@ -19,6 +19,10 @@ function LoginForm() {
     );
 
     if (user) {
+      // Store authentication state and user role
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userRole', user.role);
+      
       console.log('Logged in as:', user.role);
       switch (user.role) {
         case 'admin':

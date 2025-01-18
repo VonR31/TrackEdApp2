@@ -59,10 +59,14 @@ const TeacherPage = () => {
   };
 
   useEffect(() => {
+    // Check localStorage for theme
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark") {
       setDarkMode(true);
       document.documentElement.classList.add("dark");
+    } else if (savedTheme === "light") {
+      setDarkMode(false);
+      document.documentElement.classList.remove("dark");
     }
 
   const handleResize = () => {
@@ -74,9 +78,15 @@ const TeacherPage = () => {
   }, []);
 
   const toggleTheme = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle("dark");
-    localStorage.setItem("theme", !darkMode ? "dark" : "light");
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    if (newDarkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
   };
 
   const handleLogout = () => {
