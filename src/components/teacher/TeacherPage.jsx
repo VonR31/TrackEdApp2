@@ -64,6 +64,13 @@ const TeacherPage = () => {
       setDarkMode(true);
       document.documentElement.classList.add("dark");
     }
+
+  const handleResize = () => {
+    setCollapsed(window.innerWidth < 768);
+  };
+
+  window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const toggleTheme = () => {
@@ -77,6 +84,10 @@ const TeacherPage = () => {
       navigate("/");
     }
   };
+
+  const maroonButton = `${darkMode ? 
+    "bg-maroon-800 hover:bg-maroon-700 text-white" : 
+    "bg-maroon-600 hover:bg-maroon-700 text-white"}`;
 
   const renderContent = () => {
     if (selectedSubject) {
@@ -204,9 +215,10 @@ const TeacherPage = () => {
   return (
     <div className={`min-h-screen ${darkMode ? "dark bg-gray-900" : "bg-gray-50"}`}>
       {/* Sidebar */}
-      <div className={`fixed top-0 left-0 h-full ${collapsed ? "w-20" : "w-64"} 
+      <div className={`fixed top-0 left-0 h-full ${collapsed ? "w-16" : "w-64"} 
         ${darkMode ? "bg-gray-800" : "bg-white"} 
-        transition-all duration-300 shadow-lg z-50`}>
+        transition-all duration-300 shadow-lg z-50
+        ${window.innerWidth < 768 && !collapsed ? "overlay" : ""}`}>
         
         {/* Sidebar Header */}
         <div className="p-4 flex items-center justify-between">
