@@ -43,7 +43,7 @@ const SectionsView = ({ darkMode, onBack }) => {
               key: 'yearLevel',
               value: filterYear,
               options: ['1st Year', '2nd Year', '3rd Year', '4th Year'],
-              placeholder: 'Filter by Year'
+              placeholder: 'All Years'
             }
           ]}
           onFilterChange={handleFilterChange}
