@@ -118,7 +118,7 @@ const AdminDashboard = () => {
               <CardHeader className="pb-2 flex justify-between items-center">
                 <button
                   className={`text-sm font-medium px-4 py-1 rounded-full 
-                    ${darkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"} 
+                    ${darkMode ? "custom-maroon-button" : "custom-maroon-button"} 
                     text-white transition-colors`}
                   onClick={() => handleSeeAll(key)}
                 >

@@ -79,7 +79,7 @@ function LoginForm() {
           <Button
             type="primary"
             htmlType="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded"
+            className="w-full w-full py-2 rounded custom-maroon-button"
           >
             Sign In
           </Button>

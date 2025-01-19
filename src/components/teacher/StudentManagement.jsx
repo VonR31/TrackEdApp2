@@ -276,7 +276,7 @@
                     {activeTab === 'students' && (
                       <button
                         onClick={() => setShowGradeModal(true)}
-                        className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        className="flex items-center space-x-2 px-4 py-2 rounded-lg custom-maroon-button"
                       >
                         <Upload size={16} />
                         <span>Upload Grades</span>
@@ -310,7 +310,7 @@
                             <td className="py-3 text-center">
                               <button
                                 onClick={() => setSelectedStudent(student)}
-                                className="text-blue-500 hover:text-blue-700"
+                                className="text-red-500 hover:text-red-700"
                               >
                                 View Details
                               </button>
@@ -328,14 +328,14 @@
             <div className="flex space-x-4">
             <button 
               onClick={() => setShowQRModal(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              className="flex items-center space-x-2 px-4 py-2 rounded-lg custom-maroon-button"
             >
               <QrCode size={16} />
               <span>Generate QR</span>
             </button>
             <button
               onClick={exportToExcel}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              className="flex items-center space-x-2 px-4 py-2 rounded-lg custom-maroon-button"
             >
               <Upload size={16} />
               <span>Export</span>

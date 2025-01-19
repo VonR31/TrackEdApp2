@@ -124,7 +124,7 @@ const AddTeacherForm = ({ darkMode, onClose, onSubmit }) => {
             </button>
             <button
               type="submit"
-              className={`px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white`}
+              className={`px-4 py-2 rounded-lg custom-maroon-button`}
             >
               Add Teacher
             </button>
@@ -263,7 +263,7 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
             </button>
             <button
               type="submit"
-              className={`px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white`}
+              className={`px-4 py-2 rounded-lg custom-maroon-button`}
             >
               Add Student
             </button>
@@ -399,7 +399,7 @@ const AddSectionForm = ({ darkMode, onClose, onSubmit }) => {
             </button>
             <button
               type="submit"
-              className={`px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white`}
+              className={`px-4 py-2 rounded-lg custom-maroon-button`}
             >
               Add Section
             </button>
@@ -499,7 +499,7 @@ const AddCourseForm = ({ darkMode, onClose, onSubmit }) => {
             </button>
             <button
               type="submit"
-              className={`px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white`}
+              className={`px-4 py-2 rounded-lg custom-maroon-button`}
             >
               Add Course
             </button>
