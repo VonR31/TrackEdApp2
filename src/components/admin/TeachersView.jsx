@@ -12,13 +12,13 @@ const TeachersView = ({ darkMode, onBack }) => {
   const [selectedTeacher, setSelectedTeacher] = useState(null);
 
   const [teachers, setTeachers] = useState([
-    { id: 1, name: 'Joann Lopez', employeeId: 'T001', department: 'Technopreneurship', email: 'joann.lopez@example.com', specialization: 'Software Development' },
+    { id: 1, name: 'Joann Lopez', employeeId: 'T001', course: 'Technopreneurship', email: 'joann.lopez@example.com', specialization: 'Software Development' },
   ]);
 
   const editFields = [
     { key: 'name', label: 'Name' },
     { key: 'employeeId', label: 'Employee ID' },
-    { key: 'department', label: 'Department' },
+    { key: 'course', label: 'Course' },
     { key: 'email', label: 'Email' },
     { key: 'specialization', label: 'Specialization' },
   ];
@@ -60,14 +60,14 @@ const TeachersView = ({ darkMode, onBack }) => {
         <FilterComponent
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          filters={[{ key: 'department', placeholder: 'All Departments', value: filterDepartment, options: [...new Set(teachers.map(t => t.department))] }]}
-          onFilterChange={(key, value) => key === 'department' ? setFilterDepartment(value) : null}
+          filters={[{ key: 'course', placeholder: 'All Courses', value: filterDepartment, options: [...new Set(teachers.map(t => t.course))] }]}
+          onFilterChange={(key, value) => key === 'course' ? setFilterDepartment(value) : null}
         />
         <DataTable
           columns={[
             { header: 'Employee ID', key: 'employeeId' },
             { header: 'Name', key: 'name' },
-            { header: 'Department', key: 'department' },
+            { header: 'Course', key: 'course' },
             { header: 'Email', key: 'email' },
             { header: 'Specialization', key: 'specialization' }
           ]}

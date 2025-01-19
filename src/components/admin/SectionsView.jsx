@@ -12,14 +12,14 @@ const SectionsView = ({ darkMode, onBack }) => {
   const [selectedSection, setSelectedSection] = useState(null);
 
   const [sections, setSections] = useState([
-    { id: 1, name: 'Section A', yearLevel: '1st Year', course: 'Computer Science', maxStudents: 40, currentStudents: 35, schedule: 'MWF 9:00-10:30 AM', room: 'Room 301' },
-    { id: 2, name: 'Section B', yearLevel: '2nd Year', course: 'Information Technology', maxStudents: 30, currentStudents: 28, schedule: 'TTh 1:00-2:30 PM', room: 'Room 202' },
+    { id: 1, name: 'Section A', yearLevel: '1st Year', program: 'Computer Science', maxStudents: 40, currentStudents: 35, schedule: 'MWF 9:00-10:30 AM', room: 'Room 301' },
+    { id: 2, name: 'Section B', yearLevel: '2nd Year', program: 'Information Technology', maxStudents: 30, currentStudents: 28, schedule: 'TTh 1:00-2:30 PM', room: 'Room 202' },
   ]);
 
   const editFields = [
     { key: 'name', label: 'Section Name' },
     { key: 'yearLevel', label: 'Year Level' },
-    { key: 'course', label: 'Course' },
+    { key: 'program', label: 'Program' },
     { key: 'maxStudents', label: 'Maximum Students' },
     { key: 'currentStudents', label: 'Current Students' },
     { key: 'schedule', label: 'Schedule' },
@@ -82,7 +82,7 @@ const SectionsView = ({ darkMode, onBack }) => {
           columns={[
             { header: 'Section Name', key: 'name' },
             { header: 'Year Level', key: 'yearLevel' },
-            { header: 'Course', key: 'course' },
+            { header: 'Program', key: 'program' },
             { header: 'Students', key: 'currentStudents' },
             { header: 'Schedule', key: 'schedule' },
             { header: 'Room', key: 'room' },

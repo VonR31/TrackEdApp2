@@ -142,10 +142,9 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
     lastName: '',
     email: '',
     studentId: '',
-    course: '',
+    program: '',
     yearLevel: '',
     section: '',
-    photo: null
   });
 
   const handleSubmit = (e) => {
@@ -216,12 +215,12 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Course</label>
+              <label className="block text-sm font-medium mb-1">Program</label>
               <input
                 type="text"
                 className={`w-full p-2 rounded-lg ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}
-                value={formData.course}
-                onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                value={formData.program}
+                onChange={(e) => setFormData({ ...formData, program: e.target.value })}
                 required
               />
             </div>
@@ -244,13 +243,18 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
 
           <div>
             <label className="block text-sm font-medium mb-1">Section</label>
-            <input
-              type="text"
-              className={`w-full p-2 rounded-lg ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}
-              value={formData.section}
-              onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-              required
-            />
+              <select
+                className={`w-full p-2 rounded-lg ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}
+                value={formData.section}
+                onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                required
+              >
+                <option value="">Select Section</option>
+                <option value="1">A</option>
+                <option value="2">B</option>
+                <option value="3">C</option>
+                <option value="4">D</option>
+              </select>
           </div>
 
           <div className="flex justify-end space-x-4">
@@ -350,9 +354,9 @@ const AddSectionForm = ({ darkMode, onClose, onSubmit }) => {
                 required
               >
                 <option value="">Select Semester</option>
-                <option value="Fall">Fall</option>
-                <option value="Spring">Spring</option>
-                <option value="Summer">Summer</option>
+                <option value="Fall">!st Semester</option>
+                <option value="Spring">2nd Semester</option>
+                
               </select>
             </div>
             <div>
@@ -416,7 +420,7 @@ const AddCourseForm = ({ darkMode, onClose, onSubmit }) => {
     courseName: '',
     courseCode: '',
     creditHours: '',
-    department: '',
+    program: '',
     description: ''
   });
 
@@ -469,12 +473,12 @@ const AddCourseForm = ({ darkMode, onClose, onSubmit }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Department</label>
+            <label className="block text-sm font-medium mb-1">Program</label>
             <input
               type="text"
               className={`w-full p-2 rounded-lg ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}
-              value={formData.department}
-              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+              value={formData.program}
+              onChange={(e) => setFormData({ ...formData, program: e.target.value })}
               required
             />
           </div>
