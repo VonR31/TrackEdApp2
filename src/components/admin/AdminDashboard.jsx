@@ -11,6 +11,8 @@ import TeachersView from './TeachersView';
 import StudentsView from './StudentsView';
 import SectionsView from './SectionsView';
 import CoursesView from './CoursesView';
+import fullLogo from "../../assets/tracked-logo.png"; 
+import iconLogo from "../../assets/tracked-icon.png";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -50,9 +52,15 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
+      // Clear authentication state from localStorage
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('userRole');
+  
+      // Navigate to the login page
       navigate("/");
     }
   };
+  
 
   const handleFormSubmit = (data) => {
     console.log("Form Submitted:", data);
@@ -147,22 +155,47 @@ const AdminDashboard = () => {
 
   return (
     <div className={`min-h-screen ${darkMode ? "dark bg-gray-900" : "bg-gray-50"}`}>
-      <div className={`fixed top-0 left-0 h-full ${collapsed ? "w-16" : "w-64"} 
-        ${darkMode ? "bg-gray-800" : "bg-white"} 
-        transition-all duration-300 shadow-lg z-50`}>
-        <div className="p-4 flex items-center justify-between">
-          {!collapsed && (
-            <h1 className={`font-bold text-xl ${darkMode ? "text-white" : "text-gray-800"}`}>
-              Admin Portal
-            </h1>
-          )}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className={`p-2 rounded-lg ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
-          >
-            <MenuIcon size={20} />
-          </button>
-        </div>
+      {/* Sidebar */}
+            <div className={`fixed top-0 left-0 h-full ${collapsed ? "w-16" : "w-64"} 
+              ${darkMode ? "bg-gray-800" : "bg-white"} 
+              transition-all duration-300 shadow-lg z-50
+              ${window.innerWidth < 768 && !collapsed ? "overlay" : ""}`}>
+              
+              {/* Sidebar Header */}
+              <div className="relative h-16 flex items-center justify-center">
+                {collapsed ? (
+                  // Collapsed state: Icon acts as toggle button
+                  <button
+                    onClick={() => setCollapsed(!collapsed)}
+                    className={`p-2 rounded-lg transition-transform hover:scale-110 
+                      ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+                  >
+                    <img 
+                      src={iconLogo} 
+                      alt="Expand Sidebar"
+                      className="w-8 h-8"
+                    />
+                  </button>
+                ) : (
+                  // Expanded state: Full logo with menu button
+                  <>
+                    <div className="flex items-center justify-center">
+                      <img 
+                        src={fullLogo} 
+                        alt="TrackEd Logo"
+                        className="h-14 max-w-[200px] object-contain"
+                      />
+                    </div>
+                    <button
+                      onClick={() => setCollapsed(!collapsed)}
+                      className={`absolute right-3 p-2 rounded-lg 
+                        ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+                    >
+                      <MenuIcon size={20} />
+                    </button>
+                  </>
+                )}
+              </div>
         <nav className="mt-6">
           <button
             onClick={() => {

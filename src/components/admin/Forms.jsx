@@ -112,22 +112,7 @@ const AddTeacherForm = ({ darkMode, onClose, onSubmit }) => {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Photo</label>
-            <div className={`border-2 border-dashed rounded-lg p-4 ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="hidden"
-                id="photo-upload"
-              />
-              <label htmlFor="photo-upload" className="flex flex-col items-center justify-center cursor-pointer">
-                <Upload size={24} className="mb-2" />
-                <span className="text-sm">Click to upload photo</span>
-              </label>
-            </div>
-          </div>
+          
 
           <div className="flex justify-end space-x-4">
             <button
@@ -266,23 +251,6 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
               onChange={(e) => setFormData({ ...formData, section: e.target.value })}
               required
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Photo</label>
-            <div className={`border-2 border-dashed rounded-lg p-4 ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="hidden"
-                id="student-photo-upload"
-              />
-              <label htmlFor="student-photo-upload" className="flex flex-col items-center justify-center cursor-pointer">
-                <Upload size={24} className="mb-2" />
-                <span className="text-sm">Click to upload photo</span>
-              </label>
-            </div>
           </div>
 
           <div className="flex justify-end space-x-4">

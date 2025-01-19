@@ -3,14 +3,38 @@ import { ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import DataTable from './DataTable';
 import FilterComponent from './FilterComponent';
+import EditModal from './EditModal';
 
 const TeachersView = ({ darkMode, onBack }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
 
-  const [teachers] = useState([
-    { id: 1, name: 'Joann Lopez', employeeId: 'T001', department: 'Technopreneurship', email: 'joann.lopez@example.com', phone: '123-456-7890', specialization: 'Software Development' },
+  const [teachers, setTeachers] = useState([
+    { id: 1, name: 'Joann Lopez', employeeId: 'T001', department: 'Technopreneurship', email: 'joann.lopez@example.com', specialization: 'Software Development' },
   ]);
+
+  const editFields = [
+    { key: 'name', label: 'Name' },
+    { key: 'employeeId', label: 'Employee ID' },
+    { key: 'department', label: 'Department' },
+    { key: 'email', label: 'Email' },
+    { key: 'specialization', label: 'Specialization' },
+  ];
+
+  const handleEdit = (teacher) => {
+    setSelectedTeacher(teacher);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSave = (updatedTeacher) => {
+    setTeachers(prevTeachers =>
+      prevTeachers.map(teacher =>
+        teacher.id === updatedTeacher.id ? updatedTeacher : teacher
+      )
+    );
+  };
 
   const filteredTeachers = teachers.filter(teacher => {
     const matchesSearch = Object.values(teacher).join(' ').toLowerCase().includes(searchTerm.toLowerCase());
@@ -18,8 +42,9 @@ const TeachersView = ({ darkMode, onBack }) => {
     return matchesSearch && matchesDepartment;
   });
 
-  const handleEdit = (teacher) => console.log('Edit teacher:', teacher);
-  const handleDelete = (teacher) => window.confirm(`Are you sure you want to delete ${teacher.name}?`) && console.log('Delete teacher:', teacher);
+  const handleDelete = (teacher) => 
+    window.confirm(`Are you sure you want to delete ${teacher.name}?`) && 
+    setTeachers(prev => prev.filter(t => t.id !== teacher.id));
 
   return (
     <Card className={`${darkMode ? "bg-gray-800 text-white" : ""}`}>
@@ -51,6 +76,20 @@ const TeachersView = ({ darkMode, onBack }) => {
           onDelete={handleDelete}
           darkMode={darkMode}
         />
+
+        {selectedTeacher && (
+          <EditModal
+            isOpen={isEditModalOpen}
+            onClose={() => {
+              setIsEditModalOpen(false);
+              setSelectedTeacher(null);
+            }}
+            onSave={handleSave}
+            data={selectedTeacher}
+            fields={editFields}
+            title="Teacher"
+          />
+        )}
       </CardContent>
     </Card>
   );

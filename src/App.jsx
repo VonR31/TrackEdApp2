@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import './App.css';
 
-// Import components
 import LoginForm from './components/auth/LoginForm';
 import AdminDashboard from './components/admin/AdminDashboard';
 import TeacherPage from './components/teacher/TeacherPage';
@@ -18,46 +17,50 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Route */}
         <Route path="/" element={<LoginForm />} />
 
-        {/* Admin Routes */}
-        <Route 
-          path="/admin" 
-          element={<ProtectedRoute element={<AdminDashboard />} allowedRoles={['admin']} />} 
-        />
-        <Route 
-          path="/teachers" 
-          element={<ProtectedRoute element={<TeachersView darkMode={false} />} allowedRoles={['admin']} />} 
-        />
-        <Route 
-          path="/students" 
-          element={<ProtectedRoute element={<StudentsView darkMode={false} />} allowedRoles={['admin']} />} 
-        />
-        <Route 
-          path="/sections" 
-          element={<ProtectedRoute element={<SectionsView darkMode={false} />} allowedRoles={['admin']} />} 
-        />
-        <Route 
-          path="/courses" 
-          element={<ProtectedRoute element={<CoursesView darkMode={false} />} allowedRoles={['admin']} />} 
-        />
+        <Route path="/admin" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/teachers" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <TeachersView darkMode={false} />
+          </ProtectedRoute>
+        } />
+        <Route path="/students" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <StudentsView darkMode={false} />
+          </ProtectedRoute>
+        } />
+        <Route path="/sections" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <SectionsView darkMode={false} />
+          </ProtectedRoute>
+        } />
+        <Route path="/courses" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <CoursesView darkMode={false} />
+          </ProtectedRoute>
+        } />
 
-        {/* Teacher Routes */}
-        <Route 
-          path="/home" 
-          element={<ProtectedRoute element={<TeacherPage />} allowedRoles={['teacher']} />} 
-        />
-        <Route 
-          path="/student-management" 
-          element={<ProtectedRoute element={<StudentManagement />} allowedRoles={['teacher']} />} 
-        />
+        <Route path="/home" element={
+          <ProtectedRoute allowedRoles={['teacher']}>
+            <TeacherPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/student-management" element={
+          <ProtectedRoute allowedRoles={['teacher']}>
+            <StudentManagement />
+          </ProtectedRoute>
+        } />
 
-        {/* Student Routes */}
-        <Route 
-          path="/dashboard" 
-          element={<ProtectedRoute element={<StudentDashboard />} allowedRoles={['student']} />} 
-        />
+        <Route path="/dashboard" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <StudentDashboard />
+          </ProtectedRoute>
+        } />
       </Routes>
     </Router>
   );

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, LogOut, Menu as MenuIcon, Home, Calendar, Book, Bell, Sun, Moon, BookOpen, LineChart } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
+import fullLogo from "../../assets/tracked-logo.png"; 
+import iconLogo from "../../assets/tracked-icon.png";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -104,9 +106,15 @@ const StudentDashboard = () => {
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
+      // Clear authentication state from localStorage
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('userRole');
+  
+      // Navigate to the login page
       navigate("/");
     }
   };
+  
 
   const renderSubjectDetails = () => {
     if (!selectedSubject) return null;
@@ -268,19 +276,40 @@ const StudentDashboard = () => {
         transition-all duration-300 shadow-lg z-50`}>
         
         {/* Sidebar Header */}
-        <div className="p-4 flex items-center justify-between">
-          {!collapsed && (
-            <h1 className={`font-bold text-xl ${darkMode ? "text-white" : "text-gray-800"}`}>
-              Student Portal
-            </h1>
-          )}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className={`p-2 rounded-lg ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
-          >
-            {collapsed ? <MenuIcon size={20} /> : <MenuIcon size={20} />}
-          </button>
-        </div>
+        <div className="relative h-16 flex items-center justify-center">
+                  {collapsed ? (
+                    // Collapsed state: Icon acts as toggle button
+                    <button
+                      onClick={() => setCollapsed(!collapsed)}
+                      className={`p-2 rounded-lg transition-transform hover:scale-110 
+                        ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+                    >
+                      <img 
+                        src={iconLogo} 
+                        alt="Expand Sidebar"
+                        className="w-8 h-8"
+                      />
+                    </button>
+                  ) : (
+                    // Expanded state: Full logo with menu button
+                    <>
+                      <div className="flex items-center justify-center">
+                        <img 
+                          src={fullLogo} 
+                          alt="TrackEd Logo"
+                          className="h-14 max-w-[200px] object-contain"
+                        />
+                      </div>
+                      <button
+                        onClick={() => setCollapsed(!collapsed)}
+                        className={`absolute right-3 p-2 rounded-lg 
+                          ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+                      >
+                        <MenuIcon size={20} />
+                      </button>
+                    </>
+                  )}
+                </div>
 
         {/* Navigation Links */}
         <nav className="mt-6">

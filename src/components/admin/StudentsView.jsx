@@ -3,15 +3,40 @@ import { ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import DataTable from './DataTable';
 import FilterComponent from './FilterComponent';
+import EditModal from './EditModal';
 
 const StudentsView = ({ darkMode, onBack }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterProgram, setFilterProgram] = useState('');
   const [filterYear, setFilterYear] = useState('');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
-  const [students] = useState([
+  const [students, setStudents] = useState([
     { id: 1, name: 'Zoltan Gutierrez', studentId: 'S001', program: 'Computer Science', yearLevel: '3rd Year', section: 'A', email: 'zg.student@example.com' },
   ]);
+
+  const editFields = [
+    { key: 'name', label: 'Name' },
+    { key: 'studentId', label: 'Student ID' },
+    { key: 'program', label: 'Program' },
+    { key: 'yearLevel', label: 'Year Level' },
+    { key: 'section', label: 'Section' },
+    { key: 'email', label: 'Email' },
+  ];
+
+  const handleEdit = (student) => {
+    setSelectedStudent(student);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSave = (updatedStudent) => {
+    setStudents(prevStudents =>
+      prevStudents.map(student =>
+        student.id === updatedStudent.id ? updatedStudent : student
+      )
+    );
+  };
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = Object.values(student).join(' ').toLowerCase().includes(searchTerm.toLowerCase());
@@ -20,8 +45,9 @@ const StudentsView = ({ darkMode, onBack }) => {
     return matchesSearch && matchesProgram && matchesYear;
   });
 
-  const handleEdit = (student) => console.log('Edit student:', student);
-  const handleDelete = (student) => window.confirm(`Are you sure you want to delete ${student.name}?`) && console.log('Delete student:', student);
+  const handleDelete = (student) => 
+    window.confirm(`Are you sure you want to delete ${student.name}?`) && 
+    setStudents(prev => prev.filter(s => s.id !== student.id));
 
   return (
     <Card className={`${darkMode ? "bg-gray-800 text-white" : ""}`}>
@@ -60,6 +86,20 @@ const StudentsView = ({ darkMode, onBack }) => {
           onDelete={handleDelete}
           darkMode={darkMode}
         />
+
+        {selectedStudent && (
+          <EditModal
+            isOpen={isEditModalOpen}
+            onClose={() => {
+              setIsEditModalOpen(false);
+              setSelectedStudent(null);
+            }}
+            onSave={handleSave}
+            data={selectedStudent}
+            fields={editFields}
+            title="Student"
+          />
+        )}
       </CardContent>
     </Card>
   );

@@ -11,6 +11,19 @@ function LoginForm() {
     { email: 'student@example.com', password: 'student123', role: 'student' }
   ];
 
+  const getDefaultRoute = (role) => {
+    switch (role) {
+      case 'admin':
+        return '/admin';
+      case 'teacher':
+        return '/home';
+      case 'student':
+        return '/dashboard';
+      default:
+        return '/';
+    }
+  };
+
   const handleSubmit = (values) => {
     const { email, password } = values;
 
@@ -24,19 +37,10 @@ function LoginForm() {
       localStorage.setItem('userRole', user.role);
       
       console.log('Logged in as:', user.role);
-      switch (user.role) {
-        case 'admin':
-          navigate('/admin');
-          break;
-        case 'teacher':
-          navigate('/home');
-          break;
-        case 'student':
-          navigate('/dashboard');
-          break;
-        default:
-          alert('Invalid role!');
-      }
+      
+      // Navigate to the default route for the user's role
+      const defaultRoute = getDefaultRoute(user.role);
+      navigate(defaultRoute);
     } else {
       message.error('Invalid email or password.');
     }
