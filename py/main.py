@@ -46,6 +46,12 @@ class RoleType(str, Enum):
     teacher = 'teacher'
     student = 'student'
 
+#Section Enum
+class SectionEnum(str,Enum):
+    A = 'A'
+    B = 'B'
+    C = 'C'
+
 # Student Model
 class student(BaseModel):
     student_name: str
@@ -77,22 +83,40 @@ class student_attendance(BaseModel):
     student_id: str
     qr_pass: str
 
-# Create User Request Model
-class CreateUserRequest(BaseModel):
+# Create User Admin
+class CreateUserAdmin(BaseModel):
     first_name: str
     last_name: str
     role: RoleType
-    department_id: str
     username: str
     password: str
+
+#Create Student Teacher ACC
+class CreateStudent(BaseModel):
+    first_name: str
+    last_name: str
+    role:RoleType
+    section_id: str
+    program_id: str
+    username: str
+    password: str
+
+class CreateTeacher(BaseModel):
+    first_name: str
+    last_name: str
+    role:RoleType
+    program_id: str
+    username: str
+    password: str
+
 
 class CourseAttend(BaseModel):
     course_id: str
     student_id: str
 
-class CreateDeparment(BaseModel):
-    department_name: str 
-    department_details: str
+class CreateProgram(BaseModel):
+    program_name: str 
+    program_details: str
     req_credits: int
 
 # Token Model
@@ -104,6 +128,13 @@ class Token(BaseModel):
 class Login(BaseModel): 
     username: str
     password: str
+
+#Create Section Model
+class CreateSection(BaseModel):
+    section_name: SectionEnum
+    program_id: str
+    teacher_id: str
+    current_student: int
 
 
 # Get Database 
@@ -286,45 +317,50 @@ async def scan_qr(student_attendance:student_attendance, db: db_dependency):
     
     return {'message': 'Scanned Successfully'}
 
-@app.post("/department/create", status_code=status.HTTP_201_CREATED)
-async def create_department(department: CreateDeparment, db: db_dependency):
-    department_id = str(uuid.uuid4())
-    department_name = department.department_name
-    department_details = department.department_details
-    req_credits = department.req_credits
 
-    new_department = model.Department(
-        department_id=department_id,
-        department_name=department_name,
-        department_details=department_details,
+#Create Program
+#--------------------------------
+@app.post("/program/create", status_code=status.HTTP_201_CREATED)
+async def create_department(program: CreateProgram, db: db_dependency):
+
+    program_id = str(uuid.uuid4())
+    program_name = program.program_name
+    program_details = program.program_details
+    req_credits = program.req_credits
+
+    new_program = model.Program(
+        program_id=program_id,
+        program_name=program_name,
+        program_details=program_details,
         req_credits=req_credits
     )
 
-    db.add(new_department)
+    db.add(new_program)
     db.commit()
 
-    return {"message": "Successfully created department"} 
+    return {"message": "Successfully created program"} 
     
 # User CRUD and Authentication 
 # ----------------------------------------------------
-# Create User
-@app.post("/auth", status_code=status.HTTP_201_CREATED)
-async def create_user(create_user_request: CreateUserRequest, db: Session = Depends(get_db)):
-    
-    user_id = str(uuid.uuid4())
-    department_id = create_user_request.department_id
+# Create User/Student
+@app.post("/create/user/student", status_code=status.HTTP_201_CREATED)
+async def create_user_student(create_student:CreateStudent , db: Session = Depends(get_db)):
 
-    if department_id is None:
+    user_id = str(uuid.uuid4())
+    program_id = create_student.program_id
+    password=bcrpyt_context.hash(create_student.password)
+
+    if program_id is None:
         raise HTTPException(status_code=404, detail="There is no student with this id")
 
     # Create common user record
     create_user_model = model.User(
         user_id=user_id,
-        firstname=create_user_request.first_name,
-        lastname=create_user_request.last_name,
-        role=create_user_request.role,
-        username=create_user_request.username,
-        password=bcrpyt_context.hash(create_user_request.password)
+        firstname=create_student.first_name,
+        lastname=create_student.last_name,
+        role=create_student.role,
+        username=create_student.username,
+        password=password
     )
 
     # Add the common user to the User table
@@ -356,8 +392,49 @@ async def create_user(create_user_request: CreateUserRequest, db: Session = Depe
             # Format the new ID with leading zeros for the numerical part
             q_custom_id = ym + str(numerical_part).zfill(3)
             return q_custom_id
-        
-    #Custom Teacher ID
+    
+    # Add user to corresponding role-based table
+    if create_student.role == RoleType.student  :
+        student = model.Student(
+            student_id= get_last_id_student(), #Output example: 2501001++
+            user_id=user_id,
+            program_id=program_id,
+            section_id=create_student.section_id,
+            current_gpa=0.0,
+            gpax=0.0,
+            credits=0.0,
+            level='None', #Default Value
+            number_course=0,
+            student_status="Active"  # Default status
+        )
+        db.add(student)
+        db.commit()
+    else:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    return {"message": "Successfully created a user"}
+    
+
+#Create User/Teacher
+@app.post("/create/user/teacher", status_code=status.HTTP_201_CREATED)
+async def create_user_teacher(create_teacher: CreateTeacher, db: Session = Depends(get_db)):
+    
+    user_id = str(uuid.uuid4())
+    password = bcrpyt_context.hash(create_teacher.password)
+
+    create_user_request = model.User(
+    user_id=user_id,
+    firstname=create_teacher.first_name,
+    lastname=create_teacher.last_name,
+    role=create_teacher.role,
+    username=create_teacher.username,
+    password=password
+    )
+
+    db.add(create_user_request)
+    db.commit()
+
+ #Custom Teacher ID
     def get_last_id_teacher():
         qry = db.query(model.Teacher).order_by(model.Teacher.teacher_id.desc()).first()
 
@@ -382,35 +459,44 @@ async def create_user(create_user_request: CreateUserRequest, db: Session = Depe
             # Format the new ID with the correct year and leading zeros for the numerical part
             q_custom_id = f"{ym}-{str(numerical_part).zfill(4)}"
             return q_custom_id  
-    
-    # Add user to corresponding role-based table
-    if create_user_request.role == RoleType.student:
-        student = model.Student(
-            student_id= get_last_id_student(), #Output example: 2501001++
-            user_id=user_id,
-            department_id=department_id,
-            current_gpa=0.0,
-            gpax=0.0,
-            credits=0.0,
-            level=4,
-            number_course=0,
-            student_status="Active"  # Default status
-        )
-        db.add(student)
-        db.commit()
 
-    elif create_user_request.role == RoleType.teacher:
+
+    if create_user_request.role == RoleType.teacher:
         teacher = model.Teacher(
             teacher_id=get_last_id_teacher(),
             user_id=user_id,
             title="N/A",  # Default title
             num_course_owned=0,
-            department_id=department_id
         )
         db.add(teacher)
         db.commit()
 
-    elif create_user_request.role == RoleType.admin:
+    else:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    return {"message": "Successfully created a user"}
+
+
+#Create User/Admin
+@app.post("/create/admin", status_code=status.HTTP_201_CREATED)
+async def create_user_admin(create_user_admin: CreateUserAdmin, db: Session = Depends(get_db)):
+
+    user_id = str(uuid.uuid4())
+    roleAdmin = RoleType.admin
+    password=bcrpyt_context.hash(create_user_admin.password)
+
+    new_admin= model.User(
+        user_id=user_id,
+        firstname=create_user_admin.first_name,
+        lastname=create_user_admin.last_name,
+        role=roleAdmin,
+        username=create_user_admin.username,
+        password=password
+    )
+    db.add(new_admin)
+    db.commit()
+
+    if create_user_admin.role == RoleType.admin:
         admin = model.Admin(
             admin_id=user_id,
             user_id=user_id
@@ -421,18 +507,18 @@ async def create_user(create_user_request: CreateUserRequest, db: Session = Depe
 
     else:
         raise HTTPException(status_code=400, detail="Invalid role")
-    
-    return {"message": "Successfully created a user"}
+        
+
     
 
 #Create Course 
 #----------------------------------------------------
-@app.post("/course", status_code=status.HTTP_201_CREATED)
+@app.post("/course/create", status_code=status.HTTP_201_CREATED)
 async def create_course(course: class_course, db: db_dependency):
 
     course_id = str(uuid.uuid4())   
     course_status = True
-
+    
     db_course = model.Course(
         course_id = course_id,
         pre_requisite = course.pre_requisite,
@@ -457,7 +543,27 @@ async def fetch_course(course_id: str, db: db_dependency):
         raise HTTPException(status_code=404, detail="Course not found")
 
     return {"course": get_course}
-    
+
+#Create Section
+#---------------------------------------------------------
+@app.post("/section/create", status_code=status.HTTP_201_CREATED)
+async def create_section(section: CreateSection, db: db_dependency):
+
+    section_id = str(uuid.uuid4())
+
+    current_student = 'N/A' #Default Value
+
+    db_new_section = model.Section(
+    section_id = section_id,
+    section_name = SectionEnum.A, #Default Value
+    program_id = section.program_id,
+    teacher_id = section.teacher_id,
+    current_student = current_student
+    )
+
+    db.add(db_new_section)
+    db.commit()
+
 
 #Authentication
 #-------------------------------------
@@ -507,6 +613,23 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)], db: db
 
     return {"message": "User is still authenticated", "auth": True}
 
+#Protected Route for Backend
+#-------------------------------------
+def isAuth(token: Annotated[str, Depends(oauth2_bearer)], db: db_dependency):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception 
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User is not valid or token has expired')
+
+    return {"message": "User is still authenticated", "auth": True}
 
 
 

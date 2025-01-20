@@ -12,3 +12,14 @@
 - [x] User name should be an email
 - [x] Create Course
 - [ ] Pass Course Id to Attendance Table
+- [ ]
+
+Section:A
+Advisor: JSON
+Student Level:2nd Year
+Course:Research
+
+Section:A
+Advisor: JSON
+Student Level: 2nd Year
+Course: Coding
