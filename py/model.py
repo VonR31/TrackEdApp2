@@ -4,7 +4,7 @@ from database import Base
 # Table student
 class Student(Base):
     __tablename__ = 'student'
-    student_id = Column(String(255), primary_key=True, nullable=False)
+    student_id = Column(String(255), primary_key=True, unique=True, nullable=False)
     user_id = Column(String(255), ForeignKey('user.user_id'), nullable=False)  
     program_id = Column(String(255), ForeignKey('program.program_id'), nullable=False)
     section_id = Column(String(255), ForeignKey('section.section_id'), nullable=False)
@@ -18,7 +18,8 @@ class Student(Base):
 # Table course_attend
 class CourseAttend(Base):
     __tablename__ = "course_attend"
-    course_id = Column(String(255), ForeignKey("course.course_id"), primary_key=True, nullable=False)
+    courseattend_id = Column(String(255), primary_key=True, nullable=False)
+    course_id = Column(String(255), ForeignKey("course.course_id"),nullable=False)
     section_id = Column(String(255), ForeignKey("section.section_id"), primary_key=True, nullable=False)
     student_id = Column(String(255), ForeignKey("student.student_id"), nullable=False)
     midterm_grade = Column(Integer, nullable=False)
@@ -45,7 +46,7 @@ class User(Base):
     firstname = Column(String(255), nullable=False)
     lastname = Column(String(255), nullable=False)
     role = Column(Enum("student", "teacher", "admin", name="role_enum"), nullable=False)
-    username = Column(String(255), nullable=False)
+    username = Column(String(255), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
 
 # Table admin
@@ -83,7 +84,8 @@ class Section(Base):
 class Course(Base):
     __tablename__ = 'course'
     course_id = Column(String(255), primary_key=True, nullable=False)
-    pre_requisite = Column(String(255))
+    course_code = Column(String(255))
+    program_id = Column(String(255), ForeignKey('program.program_id'), nullable=False)
     course_name = Column(String(255), nullable=False)
     units = Column(Float, nullable=False)
     course_detail = Column(String(255), nullable=False)
@@ -92,7 +94,8 @@ class Course(Base):
 # Table student_attendance
 class StudentAttendance(Base):
     __tablename__ = 'student_attendance'
-    attendance_id = Column(String(255), ForeignKey('attendance.attendance_id'), primary_key=True, nullable=False)
+    studentattendance_id = Column(String(255),primary_key=True, nullable=False)
+    attendance_id = Column(String(255), ForeignKey('attendance.attendance_id'), nullable=False)
     student_id = Column(String(255), ForeignKey('student.student_id'), nullable=False)
     status = Column(Enum('Present','Late','Absent', name='student_attendance_status'), nullable=False)
     time_scanned = Column(DateTime)

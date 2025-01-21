@@ -1,44 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { ArrowLeft } from "lucide-react";
 import DataTable from "./DataTable";
 import FilterComponent from "./FilterComponent";
 import EditModal from "./EditModal";
 
+const baseURL = "http://127.0.0.1:8000"; // Define base URL
+
 const CoursesView = ({ darkMode, onBack }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [courses, setCourses] = useState([]);
 
-  const [courses, setCourses] = useState([
-    {
-      id: 1,
-      code: "CS101",
-      name: "Introduction to Programming",
-      program: "Computer Science",
-      units: 3,
-      description: "Basic programming concepts and problem-solving",
-      prerequisite: "None",
-    },
-    {
-      id: 2,
-      code: "IT102",
-      name: "Data Structures",
-      program: "Information Technology",
-      units: 3,
-      description: "Introduction to data structures",
-      prerequisite: "CS101",
-    },
-  ]);
+  // Fetch courses from the API
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch(`${baseURL}/admin/get_all_course`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch courses");
+        }
+        const data = await response.json();
+        setCourses(data.courses || []);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    fetchCourses();
+  }, []);
 
   const editFields = [
-    { key: "code", label: "Course Code" },
-    { key: "name", label: "Course Name" },
-    { key: "program", label: "Program" },
+    { key: "course_code", label: "Course Code" },
+    { key: "course_name", label: "Course Name" },
+    { key: "program_id", label: "Program" },
     { key: "units", label: "Units" },
-    { key: "description", label: "Description" },
-    { key: "prerequisite", label: "Prerequisite" },
+    { key: "course_detail", label: "Course Detail" },
   ];
 
   const handleEdit = (course) => {
@@ -46,12 +45,36 @@ const CoursesView = ({ darkMode, onBack }) => {
     setIsEditModalOpen(true);
   };
 
-  const handleSave = (updatedCourse) => {
-    setCourses((prevCourses) =>
-      prevCourses.map((course) =>
-        course.id === updatedCourse.id ? updatedCourse : course
-      )
-    );
+  const handleSave = async (updatedCourse) => {
+    try {
+      // Send PUT request to update the course
+      const response = await fetch(
+        `${baseURL}/admin/course/${updatedCourse.course_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedCourse),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update course");
+      }
+
+      // Update the course list in the UI
+      setCourses((prevCourses) =>
+        prevCourses.map((course) =>
+          course.course_id === updatedCourse.course_id ? updatedCourse : course
+        )
+      );
+
+      setIsEditModalOpen(false);
+      setSelectedCourse(null);
+    } catch (error) {
+      console.error("Error updating course:", error);
+    }
   };
 
   const filteredCourses = courses.filter((course) => {
@@ -59,13 +82,39 @@ const CoursesView = ({ darkMode, onBack }) => {
       .join(" ")
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const matchesProgram = !filterProgram || course.program === filterProgram;
+    const matchesProgram =
+      !filterProgram || course.program_name === filterProgram;
     return matchesSearch && matchesProgram;
   });
 
-  const handleDelete = (course) =>
-    window.confirm(`Are you sure you want to delete ${course.name}?`) &&
-    setCourses((prev) => prev.filter((c) => c.id !== course.id));
+  const handleDelete = async (course) => {
+    if (
+      window.confirm(`Are you sure you want to delete ${course.course_name}?`)
+    ) {
+      try {
+        const response = await fetch(
+          `${baseURL}/admin/course/${course.course_id}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to delete course");
+        }
+
+        // Update the course list after deletion
+        setCourses((prev) =>
+          prev.filter((c) => c.course_id !== course.course_id)
+        );
+      } catch (error) {
+        console.error("Error deleting course:", error);
+      }
+    }
+  };
 
   return (
     <Card className={`${darkMode ? "bg-gray-800 text-white" : ""}`}>
@@ -91,7 +140,7 @@ const CoursesView = ({ darkMode, onBack }) => {
               key: "program",
               placeholder: "All Programs",
               value: filterProgram,
-              options: [...new Set(courses.map((c) => c.program))],
+              options: [...new Set(courses.map((c) => c.program_name))],
             },
           ]}
           onFilterChange={(key, value) => {
@@ -103,11 +152,11 @@ const CoursesView = ({ darkMode, onBack }) => {
 
         <DataTable
           columns={[
-            { header: "Course Code", key: "code" },
-            { header: "Course Name", key: "name" },
-            { header: "Program", key: "program" },
+            { header: "Course Code", key: "course_code" },
+            { header: "Course Name", key: "course_name" },
+            { header: "Program", key: "program_name" },
             { header: "Units", key: "units" },
-            { header: "Prerequisite", key: "prerequisite" },
+            { header: "Course Detail", key: "course_detail" },
           ]}
           data={filteredCourses}
           onEdit={handleEdit}

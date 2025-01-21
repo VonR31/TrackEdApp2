@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
 
 const EditModal = ({ isOpen, onClose, onSave, data, fields, title }) => {
   const [formData, setFormData] = useState(data);
 
   useEffect(() => {
     setFormData(data);
+    console.log(data);
   }, [data]);
 
   const handleSubmit = (e) => {
@@ -33,8 +34,10 @@ const EditModal = ({ isOpen, onClose, onSave, data, fields, title }) => {
               </label>
               <input
                 type="text"
-                value={formData[field.key] || ''}
-                onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                value={formData[field.key] || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, [field.key]: e.target.value })
+                }
                 className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>

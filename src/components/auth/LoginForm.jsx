@@ -34,7 +34,7 @@ function LoginForm() {
       formData.append("password", password);
 
       // Get token from authentication endpoint
-      const response = await axios.post(`${baseURL}/login`, formData, {
+      const response = await axios.post(`${baseURL}/auth/login`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
