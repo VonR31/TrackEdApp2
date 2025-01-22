@@ -46,9 +46,7 @@ async def get_qr_time(attendance_id: str, db: db_dependency):
     return {"message": total_time}
 
 @attendance_router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_qr(attendance:CreateAttendance, role: Annotated[str, Depends(isAuthorized)],db: db_dependency): 
-    if role != "teacher" or role != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not authorized to do this action")
+async def create_qr(attendance:CreateAttendance,db: db_dependency): 
 
     attendance_id = str(uuid.uuid4())
     qr_name = str(uuid.uuid4())
@@ -107,10 +105,8 @@ async def create_qr(attendance:CreateAttendance, role: Annotated[str, Depends(is
     return {"message": "Created qr successfully!"}
 
 @attendance_router.get('/get_qr/{attendance_id}', status_code=status.HTTP_200_OK)
-async def fetch_qr(attendance_id:str, role: Annotated[str, Depends(isAuthorized)], db:db_dependency):
-    if role != "teacher":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not authorized to do this action!")        
-
+async def fetch_qr(attendance_id:str,db:db_dependency):
+    
     get_qr = db.query(model.Attendance).filter(model.Attendance.attendance_id == attendance_id).first()
     if get_qr == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="QR code not found")
@@ -118,9 +114,8 @@ async def fetch_qr(attendance_id:str, role: Annotated[str, Depends(isAuthorized)
     return {"qr": get_qr}
 
 @attendance_router.post('/scan_qr', status_code=status.HTTP_202_ACCEPTED)
-async def scan_qr(student_attendance:student_attendance, role: Annotated[str, Depends(isAuthorized)],db: db_dependency):
-    if role != "student":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not authorized to do this ")
+async def scan_qr(student_attendance:student_attendance,db: db_dependency):
+
     get_qr = db.query(model.Attendance).filter(model.Attendance.attendance_id == student_attendance.attendance_id).first()
 
     if get_qr is None:

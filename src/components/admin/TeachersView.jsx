@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import DataTable from "./DataTable";
@@ -6,35 +6,29 @@ import FilterComponent from "./FilterComponent";
 import EditModal from "./EditModal";
 
 const TeachersView = ({ darkMode, onBack }) => {
+  const [teachers, setTeachers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterDepartment, setFilterDepartment] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
 
-  const [teachers, setTeachers] = useState([
-    {
-      id: 1,
-      name: "Joann Lopez",
-      employeeId: "T001",
-      course: "Technopreneurship",
-      program: "BSIT",
-      email: "joann.lopez@example.com",
-    },
-  ]);
+  // Fetch teachers data from the backend
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/admin/get_all_teacher"
+        );
+        const data = await response.json();
+        if (data.status === "success") {
+          setTeachers(data.teachers);
+        }
+      } catch (error) {
+        console.error("Error fetching teachers:", error);
+      }
+    };
 
-  const editFields = [
-    { key: "name", label: "Name", type: "text" },
-    {
-      key: "course",
-      label: "Course",
-      type: "select",
-      options: [
-        { value: "1", label: "Technopreneurship" },
-        { value: "2", label: "Project" },
-      ],
-    },
-    { key: "email", label: "Email", type: "text" },
-  ];
+    fetchTeachers();
+  }, []);
 
   const handleEdit = (teacher) => {
     setSelectedTeacher(teacher);
@@ -44,24 +38,22 @@ const TeachersView = ({ darkMode, onBack }) => {
   const handleSave = (updatedTeacher) => {
     setTeachers((prevTeachers) =>
       prevTeachers.map((teacher) =>
-        teacher.id === updatedTeacher.id ? updatedTeacher : teacher
+        teacher.teacher_id === updatedTeacher.teacher_id
+          ? updatedTeacher
+          : teacher
       )
     );
   };
 
   const filteredTeachers = teachers.filter((teacher) => {
-    const matchesSearch = Object.values(teacher)
-      .join(" ")
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesDepartment =
-      !filterDepartment || teacher.department === filterDepartment;
-    return matchesSearch && matchesDepartment;
+    return teacher.name.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const handleDelete = (teacher) =>
     window.confirm(`Are you sure you want to delete ${teacher.name}?`) &&
-    setTeachers((prev) => prev.filter((t) => t.id !== teacher.id));
+    setTeachers((prev) =>
+      prev.filter((t) => t.teacher_id !== teacher.teacher_id)
+    );
 
   return (
     <Card className={`${darkMode ? "bg-gray-800 text-white" : ""}`}>
@@ -82,23 +74,11 @@ const TeachersView = ({ darkMode, onBack }) => {
         <FilterComponent
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          filters={[
-            {
-              key: "course",
-              placeholder: "All Courses",
-              value: filterDepartment,
-              options: [...new Set(teachers.map((t) => t.course))],
-            },
-          ]}
-          onFilterChange={(key, value) =>
-            key === "course" ? setFilterDepartment(value) : null
-          }
         />
         <DataTable
           columns={[
-            { header: "Teacher ID", key: "employeeId" },
+            { header: "Teacher ID", key: "teacher_id" },
             { header: "Name", key: "name" },
-            { header: "Course", key: "course" },
             { header: "Program", key: "program" },
             { header: "Email", key: "email" },
           ]}
@@ -117,7 +97,10 @@ const TeachersView = ({ darkMode, onBack }) => {
             }}
             onSave={handleSave}
             data={selectedTeacher}
-            fields={editFields}
+            fields={[
+              { key: "name", label: "Name", type: "text" },
+              { key: "email", label: "Email", type: "text" },
+            ]}
             title="Teacher"
           />
         )}

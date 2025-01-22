@@ -49,6 +49,8 @@ class User(Base):
     username = Column(String(255), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
 
+    teachers = relationship('Teacher', back_populates='user')
+
 # Table admin
 class Admin(Base):
     __tablename__ = 'admin'
@@ -60,7 +62,13 @@ class Teacher(Base):
     __tablename__ = 'teacher'
     teacher_id = Column(String(255), primary_key=True, nullable=False)
     user_id = Column(String(255), ForeignKey('user.user_id'), nullable=False)
-    num_course_owned = Column(Integer, nullable=False)
+    num_course_owned = Column(Integer, default=0)
+    program_id = Column(String(255), ForeignKey('program.program_id'), nullable=False)  # Ensure this exists
+
+    # Relationship to User and Program
+    user = relationship('User', back_populates='teachers')
+    program = relationship('Program', back_populates='teachers')
+
 
 class Program(Base):
     __tablename__ = 'program'
@@ -72,6 +80,7 @@ class Program(Base):
 
     # Establish a relationship with Section
     sections = relationship("Section", back_populates="program")
+    teachers = relationship('Teacher', back_populates='program')
 
 class Section(Base):
     __tablename__ = 'section'

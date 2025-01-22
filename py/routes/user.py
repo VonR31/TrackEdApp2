@@ -55,10 +55,7 @@ class CreateTeacher(BaseModel):
 
 #CRUD Student
 @user_router.post("/student", status_code=status.HTTP_201_CREATED)
-async def create_user_student(create_student:CreateStudent, role: Annotated[str, Depends(isAuthorized)],  db: db_dependency):
-
-    if role != "admin":  
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not authorize to this action")
+async def create_user_student(create_student:CreateStudent,db: db_dependency):
 
     user_id = str(uuid.uuid4())
     program_id = create_student.program_id
@@ -130,10 +127,7 @@ async def create_user_student(create_student:CreateStudent, role: Annotated[str,
 
 #Create User/Teacher
 @user_router.post("/teacher", status_code=status.HTTP_201_CREATED)
-async def create_user_teacher(create_teacher: CreateTeacher,role: Annotated[str, Depends(isAuthorized)], db: db_dependency):
-
-    if role != "admin":
-       raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not authorized to do this action!")  
+async def create_user_teacher(create_teacher: CreateTeacher,db: db_dependency):  
 
     user_id = str(uuid.uuid4())
     password = bcrpyt_context.hash(create_teacher.password)
@@ -179,6 +173,7 @@ async def create_user_teacher(create_teacher: CreateTeacher,role: Annotated[str,
     if create_user_request.role == RoleType.teacher:
         teacher = model.Teacher(
             teacher_id=get_last_id_teacher(),
+            program_id=create_teacher.program_id,
             user_id=user_id,
             num_course_owned=0,
         )

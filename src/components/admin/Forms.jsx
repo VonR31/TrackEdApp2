@@ -10,20 +10,13 @@ const AddTeacherForm = ({ darkMode, onClose, onSubmit }) => {
     firstName: "",
     lastName: "",
     email: "",
-    course: "",
-    photo: null,
     program: " ",
+    password: "teacher123",
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
-  };
-
-  const handlePhotoChange = (e) => {
-    if (e.target.files[0]) {
-      setFormData({ ...formData, photo: e.target.files[0] });
-    }
   };
 
   return (
@@ -90,24 +83,6 @@ const AddTeacherForm = ({ darkMode, onClose, onSubmit }) => {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Course</label>
-            <select
-              className={`w-full p-2 rounded-lg ${
-                darkMode ? "bg-gray-700" : "bg-gray-100"
-              }`}
-              value={formData.course}
-              onChange={(e) =>
-                setFormData({ ...formData, course: e.target.value })
-              }
-              required
-            >
-              <option value="">Select Course</option>
-              <option value="1"> </option> //value from the courses table
-              <option value="2"> </option> //value from the courses table
-            </select>
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Program</label>
@@ -168,79 +143,88 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
 
   const [programs, setPrograms] = useState([]);
   const [sections, setSections] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch programs when the component is mounted
   useEffect(() => {
-    async function fetchPrograms() {
-      try {
-        const response = await fetch(
-          "http://127.0.0.1:8000/admin/get_all_program"
-        );
-        const data = await response.json();
-        setPrograms(data.programs);
-      } catch (error) {
-        console.error("Error fetching programs:", error);
-      }
-    }
-
     fetchPrograms();
   }, []);
 
-  // Function to fetch sections based on selected program
-  const fetchSections = async (programName) => {
-    try {
-      const encodedProgramName = encodeURIComponent(programName); // Ensure program name is properly encoded
-      console.log("Encoded program name:", encodedProgramName); // Log to verify encoding
-
-      const response = await fetch(
-        `http://127.0.0.1:8000/admin/get_filtered_sections_by_program?program_name=${encodedProgramName}`
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error fetching sections");
-      }
-
-      const data = await response.json();
-      console.log("Fetched sections:", data); // Log the response for debugging
-
-      if (Array.isArray(data)) {
-        setSections(data); // Set the fetched sections
-      } else {
-        throw new Error("Received data is not an array");
-      }
-    } catch (error) {
-      console.error("Error fetching sections:", error); // Log the error
-      setError(error.message); // Set the error message to show it to the user
-      setSections([]); // Reset sections on error
-    }
-  };
-
   useEffect(() => {
     if (formData.program) {
-      fetchSections(formData.program); // Fetch sections when program changes
-    } else {
-      setSections([]); // Reset sections if no program is selected
+      fetchSections();
     }
   }, [formData.program]);
 
-  const handleSubmit = (e) => {
+  const fetchPrograms = async () => {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/admin/get_all_program"
+      );
+      const data = await response.json();
+      setPrograms(data.programs || []);
+    } catch (error) {
+      setError("Failed to load programs");
+    }
+  };
+
+  const fetchSections = async () => {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/admin/get_all_section"
+      );
+      const data = await response.json();
+      setSections(data.sections || []);
+    } catch (error) {
+      console.error("Error fetching sections:", error);
+      setSections([]);
+      setError("Failed to load sections");
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    try {
+      const studentData = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        username: formData.email,
+        password: formData.password,
+        role: "student", // Role is predefined as 'student' for new students
+        program_id: formData.program,
+        section_id: formData.section,
+        year_level: formData.yearLevel,
+      };
 
-    const studentData = {
-      first_name: formData.firstName,
-      last_name: formData.lastName,
-      username: formData.email,
-      password: formData.password,
-      program_id: formData.program,
-      year_level: formData.yearLevel,
-      section_id: formData.section,
-      role: "student",
-    };
+      // Send POST request to create the student
+      const response = await fetch(
+        "http://127.0.0.1:8000/create/user/student",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(studentData),
+        }
+      );
 
-    onSubmit(studentData); // Submit the data
+      const result = await response.json();
+      if (response.status === 201) {
+        alert(result.message || "Student added successfully!");
+        onClose(); // Close the form after successful submission
+      } else {
+        setError(result.detail || "Failed to add student");
+      }
+    } catch (error) {
+      setError("Failed to add student");
+    }
+  };
+
+  const handleProgramChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      program: e.target.value,
+      section: "", // Reset section when program changes
+    }));
   };
 
   return (
@@ -269,7 +253,10 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
                 }`}
                 value={formData.firstName}
                 onChange={(e) =>
-                  setFormData({ ...formData, firstName: e.target.value })
+                  setFormData((prev) => ({
+                    ...prev,
+                    firstName: e.target.value,
+                  }))
                 }
                 required
               />
@@ -285,7 +272,7 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
                 }`}
                 value={formData.lastName}
                 onChange={(e) =>
-                  setFormData({ ...formData, lastName: e.target.value })
+                  setFormData((prev) => ({ ...prev, lastName: e.target.value }))
                 }
                 required
               />
@@ -301,7 +288,7 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
               }`}
               value={formData.email}
               onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
+                setFormData((prev) => ({ ...prev, email: e.target.value }))
               }
               required
             />
@@ -316,7 +303,7 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
               }`}
               value={formData.password}
               onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
+                setFormData((prev) => ({ ...prev, password: e.target.value }))
               }
               required
             />
@@ -330,14 +317,12 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
                   darkMode ? "bg-gray-700" : "bg-gray-100"
                 }`}
                 value={formData.program}
-                onChange={(e) =>
-                  setFormData({ ...formData, program: e.target.value })
-                }
+                onChange={handleProgramChange}
                 required
               >
                 <option value="">Select Program</option>
                 {programs.map((program) => (
-                  <option key={program.program_id} value={program.program_name}>
+                  <option key={program.program_id} value={program.program_id}>
                     {program.program_name}
                   </option>
                 ))}
@@ -353,7 +338,10 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
                 }`}
                 value={formData.yearLevel}
                 onChange={(e) =>
-                  setFormData({ ...formData, yearLevel: e.target.value })
+                  setFormData((prev) => ({
+                    ...prev,
+                    yearLevel: e.target.value,
+                  }))
                 }
                 required
               >
@@ -374,7 +362,10 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
               }`}
               value={formData.section}
               onChange={(e) =>
-                setFormData({ ...formData, section: e.target.value })
+                setFormData((prev) => ({
+                  ...prev,
+                  section: e.target.value,
+                }))
               }
               required
             >
@@ -403,7 +394,7 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
             </button>
             <button
               type="submit"
-              className={`px-4 py-2 rounded-lg custom-maroon-button`}
+              className="px-4 py-2 rounded-lg custom-maroon-button"
             >
               Add Student
             </button>

@@ -337,30 +337,35 @@ async def get_all_section(db: db_dependency):
 
     return{"sections": get_all_sections}
 
+#Get Section Value in add student form
+@admin_router.get("/get_section_student_form", status_code=status.HTTP_200_OK)
+async def get_all_section(db: db_dependency):
+    get_all_sections = db.query(model.Section).all()
+    return {
+        "sections": [{"section_id": section.id, "section_name": section.name} for section in get_all_sections]
+    }
 
-#Filtered Sections by program
-@admin_router.get("/get_filtered_sections_by_program", response_model=List[SectionBase])
-async def get_filtered_sections_by_program(
-    program_name: str = Query(...),  # program_name is required
-    db: Session = Depends(db_dependency)
-):
-    if not program_name:
-        return {"message": "Program name is required"}
-    
-    print(f"Received program name: {program_name}")  # Debug log
 
-    try:
-        filtered_sections = db.query(model.Section).filter(
-            model.Section.program_name.ilike(f"%{program_name}%")
-        ).all()
+# # Filtered Sections by program
+# @admin_router.get("/admin/get_filtered_sections_by_program")
+# async def get_filtered_sections_by_program(
+#     program_name: str = Query(..., min_length=1),  # Ensure query parameter validation
+#     db: Session = Depends(db_dependency)
+# ):
+#     try:
+#         # Verify program exists
+#         program = db.query(model.Program).filter(model.Program.program_name.ilike(program_name)).first()
+#         if not program:
+#             raise HTTPException(status_code=404, detail="Program not found")
 
-        if not filtered_sections:
-            return {"message": "No sections found for the selected program"}
+#         # Fetch sections associated with the program
+#         sections = db.query(model.Section).filter(model.Section.program_id == program.program_id).all()
+        
+#         # Return section data
+#         return [{"section_id": section.section_id, "section_name": section.section_name} for section in sections]
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
-        return filtered_sections
-    except Exception as e:
-        print(f"Error filtering sections by program: {e}")
-        return {"message": f"Error fetching filtered sections: {e}"}
 
 
 #Update Section
@@ -536,8 +541,56 @@ async def delete_student(student_id: str, db: db_dependency):
         )
     
 
-# #CRUD TEACHER
-# @admin_router.get("/get_all_teacher", status_code=status.HTTP_200_OK)
+#CRUD TEACHER
+
+#Get Teacher
+@admin_router.get("/get_all_teacher", status_code=status.HTTP_200_OK)
+async def get_all_teacher(db: db_dependency):
+    try:
+        # Fetch all teachers with their related data in a single query
+        get_all_teachers = db.query(
+            model.Teacher.teacher_id,
+            model.User.firstname,
+            model.User.lastname,
+            model.User.username,
+            model.Program.program_name
+        ).join(
+            model.User, 
+            model.Teacher.user_id == model.User.user_id  # Join User based on user_id
+        ).join(
+            model.Program, 
+            model.Teacher.program_id == model.Program.program_id  # Join Program based on program_id
+        ).all()
+
+        teachers = []
+        for teacher in get_all_teachers:
+            teachers.append({
+                "teacher_id": teacher.teacher_id,
+                "name": f"{teacher.firstname} {teacher.lastname}",
+                "program": teacher.program_name if teacher.program_name else "No Program Assigned",
+                "email": teacher.username
+            })
+
+        return {
+            "status": "success",
+            "message": "Teachers retrieved successfully",
+            "total_teachers": len(teachers),
+            "teachers": teachers
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while retrieving teachers: {str(e)}"
+        )
+
+
+#Update Teacher
+# @admin_router.put("/update_teacher/{teacher_id}", status_code=status.HTTP_200_OK)
+
+
+    
+
 
 
 
