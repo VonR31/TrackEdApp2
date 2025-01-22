@@ -586,7 +586,78 @@ async def get_all_teacher(db: db_dependency):
 
 
 #Update Teacher
-# @admin_router.put("/update_teacher/{teacher_id}", status_code=status.HTTP_200_OK)
+@admin_router.put("/update_teacher/{teacher_id}", status_code=status.HTTP_200_OK)
+async def update_teacher(teacher_id: int, teacher_data: dict, db: db_dependency):
+    try:
+        # Fetch the teacher and associated user
+        teacher = db.query(model.Teacher).filter(model.Teacher.teacher_id == teacher_id).first()
+        if not teacher:
+            raise HTTPException(status_code=404, detail="Teacher not found")
+        
+        user = db.query(model.User).filter(model.User.user_id == teacher.user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Update user details
+        if "firstname" in teacher_data:
+            user.firstname = teacher_data["firstname"]
+        if "lastname" in teacher_data:
+            user.lastname = teacher_data["lastname"]
+        if "email" in teacher_data:
+            user.username = teacher_data["email"]
+        
+        # Update teacher details
+        if "program_id" in teacher_data:
+            teacher.program_id = teacher_data["program_id"]
+        
+        db.commit()
+        return {"status": "success", "message": "Teacher updated successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while updating teacher: {str(e)}"
+        )
+
+#delete Teacher
+@admin_router.delete("/delete_teacher/{teacher_id}", status_code=status.HTTP_200_OK)
+async def delete_teacher(teacher_id: str, db: db_dependency):  # Accept teacher_id as a string
+    try:
+        # Fetch the teacher
+        teacher = db.query(model.Teacher).filter(model.Teacher.teacher_id == teacher_id).first()
+        if not teacher:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Teacher with ID {teacher_id} not found"
+            )
+        
+        user_id = teacher.user_id
+
+        # Delete teacher and user
+        db.delete(teacher)
+        user = db.query(model.User).filter(model.User.user_id == user_id).first()
+        if user:
+            db.delete(user)
+        
+        db.commit()
+        return {
+            "message": "Teacher and associated user account deleted successfully",
+            "deleted_teacher_id": teacher_id
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while deleting teacher: {str(e)}"
+        )
+
+
+
+
 
 
     

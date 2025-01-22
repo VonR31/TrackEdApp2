@@ -10,13 +10,63 @@ const AddTeacherForm = ({ darkMode, onClose, onSubmit }) => {
     firstName: "",
     lastName: "",
     email: "",
-    program: " ",
-    password: "teacher123",
+    password: "teacher123", // Default password for teachers
+    program: "",
   });
 
-  const handleSubmit = (e) => {
+  const [programs, setPrograms] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchPrograms();
+  }, []);
+
+  const fetchPrograms = async () => {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/admin/get_all_program"
+      );
+      const data = await response.json();
+      setPrograms(data.programs || []);
+    } catch (error) {
+      setError("Failed to load programs");
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    try {
+      const teacherData = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        username: formData.email,
+        password: formData.password,
+        role: "teacher", // Role is predefined as 'teacher' for new teachers
+        program_id: formData.program,
+      };
+
+      // Send POST request to create the teacher
+      const response = await fetch(
+        "http://127.0.0.1:8000/create/user/teacher",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(teacherData),
+        }
+      );
+
+      const result = await response.json();
+      if (response.status === 201) {
+        alert(result.message || "Teacher added successfully!");
+        onClose(); // Close the form after successful submission
+      } else {
+        setError(result.detail || "Failed to add teacher");
+      }
+    } catch (error) {
+      setError("Failed to add teacher");
+    }
   };
 
   return (
@@ -83,25 +133,43 @@ const AddTeacherForm = ({ darkMode, onClose, onSubmit }) => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Program</label>
-              <select
-                className={`w-full p-2 rounded-lg ${
-                  darkMode ? "bg-gray-700" : "bg-gray-100"
-                }`}
-                value={formData.program}
-                onChange={(e) =>
-                  setFormData({ ...formData, program: e.target.value })
-                }
-                required
-              >
-                <option value="">Select Program</option>
-                <option value="1"></option>
-                <option value="2"></option>
-              </select>
-            </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Password</label>
+            <input
+              type="password"
+              className={`w-full p-2 rounded-lg ${
+                darkMode ? "bg-gray-700" : "bg-gray-100"
+              }`}
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              required
+            />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Program</label>
+            <select
+              className={`w-full p-2 rounded-lg ${
+                darkMode ? "bg-gray-700" : "bg-gray-100"
+              }`}
+              value={formData.program}
+              onChange={(e) =>
+                setFormData({ ...formData, program: e.target.value })
+              }
+              required
+            >
+              <option value="">Select Program</option>
+              {programs.map((program) => (
+                <option key={program.program_id} value={program.program_id}>
+                  {program.program_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {error && <div className="text-red-500 text-sm">{error}</div>}
 
           <div className="flex justify-end space-x-4">
             <button

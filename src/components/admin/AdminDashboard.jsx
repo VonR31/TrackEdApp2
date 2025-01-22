@@ -78,7 +78,14 @@ const AdminDashboard = () => {
       }
     };
 
+    // Initial fetch
     fetchStats();
+
+    // Set interval to refresh stats every 30 seconds
+    const intervalId = setInterval(fetchStats, 30000);
+
+    // Cleanup function to clear interval on component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {

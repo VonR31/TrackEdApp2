@@ -5,55 +5,130 @@ import DataTable from "./DataTable";
 import FilterComponent from "./FilterComponent";
 import EditModal from "./EditModal";
 
+const baseURL = "http://127.0.0.1:8000";
+
 const TeachersView = ({ darkMode, onBack }) => {
   const [teachers, setTeachers] = useState([]);
+  const [programs, setPrograms] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterProgram, setFilterProgram] = useState("");
+  const [filterYear, setFilterYear] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
 
-  // Fetch teachers data from the backend
   useEffect(() => {
-    const fetchTeachers = async () => {
-      try {
-        const response = await fetch(
-          "http://127.0.0.1:8000/admin/get_all_teacher"
-        );
-        const data = await response.json();
-        if (data.status === "success") {
-          setTeachers(data.teachers);
-        }
-      } catch (error) {
-        console.error("Error fetching teachers:", error);
-      }
-    };
-
     fetchTeachers();
+    fetchPrograms();
   }, []);
 
+  const fetchTeachers = async () => {
+    try {
+      const response = await fetch(`${baseURL}/admin/get_all_teacher`);
+      if (!response.ok) throw new Error("Failed to fetch teachers");
+      const data = await response.json();
+      setTeachers(data.teachers || []);
+    } catch (error) {
+      console.error("Error fetching teachers:", error);
+    }
+  };
+
+  const fetchPrograms = async () => {
+    try {
+      const response = await fetch(`${baseURL}/admin/get_all_program`);
+      if (!response.ok) throw new Error("Failed to fetch programs");
+      const data = await response.json();
+      setPrograms(data.programs || []);
+    } catch (error) {
+      console.error("Error fetching programs:", error);
+    }
+  };
+
+  const editFields = [
+    {
+      key: "firstname",
+      label: "First Name",
+      type: "text",
+    },
+    {
+      key: "lastname",
+      label: "Last Name",
+      type: "text",
+    },
+    {
+      key: "program_id",
+      label: "Program",
+      type: "select",
+      options: programs.map((program) => ({
+        value: program.program_id,
+        label: program.program_name,
+      })),
+    },
+    {
+      key: "email",
+      label: "Email",
+      type: "email",
+    },
+  ];
+
   const handleEdit = (teacher) => {
-    setSelectedTeacher(teacher);
+    const fullName =
+      teacher.name || `${teacher.firstname || ""} ${teacher.lastname || ""}`;
+    const [firstname, ...lastnameParts] = fullName.split(" ");
+    const lastname = lastnameParts.join(" ");
+
+    setSelectedTeacher({
+      ...teacher,
+      firstname,
+      lastname,
+    });
     setIsEditModalOpen(true);
   };
 
-  const handleSave = (updatedTeacher) => {
-    setTeachers((prevTeachers) =>
-      prevTeachers.map((teacher) =>
-        teacher.teacher_id === updatedTeacher.teacher_id
-          ? updatedTeacher
-          : teacher
-      )
-    );
+  const handleSave = async (updatedTeacher) => {
+    try {
+      const response = await fetch(
+        `${baseURL}/admin/update_teacher/${parseInt(
+          updatedTeacher.teacher_id
+        )}`, // Ensure integer ID
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedTeacher),
+        }
+      );
+      if (!response.ok) throw new Error("Failed to update teacher");
+      fetchTeachers();
+      setIsEditModalOpen(false);
+      setSelectedTeacher(null);
+    } catch (error) {
+      console.error("Error updating teacher:", error);
+    }
+  };
+
+  const handleDelete = async (teacher) => {
+    if (window.confirm(`Are you sure you want to delete ${teacher.name}?`)) {
+      try {
+        const response = await fetch(
+          `${baseURL}/admin/delete_teacher/${teacher.teacher_id}`, // teacher_id as string
+          { method: "DELETE" }
+        );
+
+        if (!response.ok) throw new Error("Failed to delete teacher");
+        fetchTeachers();
+      } catch (error) {
+        console.error("Error deleting teacher:", error);
+      }
+    }
   };
 
   const filteredTeachers = teachers.filter((teacher) => {
-    return teacher.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = Object.values(teacher)
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesProgram = !filterProgram || teacher.program === filterProgram;
+    return matchesSearch && matchesProgram;
   });
-
-  const handleDelete = (teacher) =>
-    window.confirm(`Are you sure you want to delete ${teacher.name}?`) &&
-    setTeachers((prev) =>
-      prev.filter((t) => t.teacher_id !== teacher.teacher_id)
-    );
 
   return (
     <Card className={`${darkMode ? "bg-gray-800 text-white" : ""}`}>
@@ -74,6 +149,17 @@ const TeachersView = ({ darkMode, onBack }) => {
         <FilterComponent
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          filters={[
+            {
+              key: "program",
+              placeholder: "All Programs",
+              value: filterProgram,
+              options: programs.map((program) => program.program_name),
+            },
+          ]}
+          onFilterChange={(key, value) => {
+            if (key === "program") setFilterProgram(value);
+          }}
         />
         <DataTable
           columns={[
@@ -87,7 +173,6 @@ const TeachersView = ({ darkMode, onBack }) => {
           onDelete={handleDelete}
           darkMode={darkMode}
         />
-
         {selectedTeacher && (
           <EditModal
             isOpen={isEditModalOpen}
@@ -97,11 +182,8 @@ const TeachersView = ({ darkMode, onBack }) => {
             }}
             onSave={handleSave}
             data={selectedTeacher}
-            fields={[
-              { key: "name", label: "Name", type: "text" },
-              { key: "email", label: "Email", type: "text" },
-            ]}
-            title="Teacher"
+            fields={editFields}
+            title="Edit Teacher"
           />
         )}
       </CardContent>
