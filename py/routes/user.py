@@ -37,6 +37,7 @@ class CreateStudent(BaseModel):
     first_name: str
     last_name: str
     role:RoleType
+    year_level: int
     section_id: str
     program_id: str
     username: str
@@ -115,8 +116,7 @@ async def create_user_student(create_student:CreateStudent, role: Annotated[str,
             section_id=create_student.section_id,
             current_gpa=0.0,
             gpax=0.0,
-            credits=0.0,
-            level='None', #Default Value
+            year_level= create_student.year_level,
             number_course=0,
             student_status="Active"  # Default status
         )

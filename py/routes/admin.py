@@ -1,12 +1,16 @@
 from enum import Enum
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from sqlalchemy import distinct, func
+from typing import List
 from routes.auth import isAuthorized
 import model
 import uuid
 from database import db_dependency
+from typing import Optional
+
 
 admin_router = APIRouter(prefix="/admin", tags=['admin'])
 
@@ -51,12 +55,33 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-#Create Section Model
 class CreateSection(BaseModel):
     section_name: SectionEnum
+    year_level: int
     program_id: str
     current_student: int
     schedule: str
+
+#Filter Section By Program Model
+class SectionBase(BaseModel):
+    section_id: str
+    section_name: str
+    program_id: str
+    year_level: int
+    current_student: int
+    schedule: str
+
+    class Config:
+        orm_mode = True
+
+#Update Section Model
+class SectionUpdate(BaseModel):
+    section_name: Optional[str] 
+    year_level: Optional[int]
+    program_id: Optional[str] 
+    current_student: Optional[int]
+    schedule: Optional[str] 
+
 
 class EditCourse(BaseModel):
     course_name: str
@@ -65,12 +90,24 @@ class EditCourse(BaseModel):
     units: int
     course_detail: str
 
-class UpdateStudent(BaseModel): #Student Edit From the Admin Dashboard
-    program_id: str
-    section_id: str
-    level: int
-    name: str #first and last name from the user table separate rows
-    email: str #username from the user table
+# Enum for student status
+class StudentStatus(str, Enum):
+    ACTIVE = "Active"
+    INACTIVE = "Inactive"
+    GRADUATED = "Graduated"
+    SUSPENDED = "Suspended"
+    EXPELLED = "Expelled"
+
+# Pydantic model for student update
+class StudentUpdate(BaseModel):
+    program_id: Optional[str] = None
+    section_id: Optional[str] = None
+    current_gpa: Optional[float] = None
+    gpax: Optional[float] = None
+    credits: Optional[float] = None
+    year_level: Optional[int] = None
+    number_course: Optional[int] = None
+    student_status: Optional[StudentStatus] = None
 
 
 #Get all Student from Admin Dashboard Student List
@@ -178,6 +215,8 @@ async def create_course(course: class_course,db: db_dependency):
 
     return {"message": "Created course successfully"}
 
+
+#Get Course
 @admin_router.get("/course/{course_id}", status_code=status.HTTP_200_OK)
 async def fetch_course(course_id: str,role: Annotated[str, Depends(isAuthorized)], db: db_dependency):
     
@@ -228,6 +267,7 @@ async def get_all_course(db: db_dependency):
 
     return {"courses": courses}
 
+#Update Course
 @admin_router.put("/course/{course_id}", status_code=status.HTTP_202_ACCEPTED)
 async def edit_course(course_id: str, course_edit: EditCourse, db:db_dependency):
     get_course = db.query(model.Course).filter(model.Course.course_id == course_id)
@@ -246,6 +286,8 @@ async def edit_course(course_id: str, course_edit: EditCourse, db:db_dependency)
 
     return {"message": "Updated course has been updated!"}
     
+
+#Delete Course
 @admin_router.delete("/course/{course_id}", status_code=status.HTTP_202_ACCEPTED)
 async def delete_course(course_id: str, db:db_dependency):
     get_course = db.query(model.Course).filter(model.Course.course_id == course_id) 
@@ -256,20 +298,11 @@ async def delete_course(course_id: str, db:db_dependency):
     db.commit()
 
 
-#CRUD Section of table Section
+#CRUD Section
 #---------------------------------------------------------
+#Create Section
 @admin_router.post("/section/create", status_code=status.HTTP_201_CREATED)
-async def create_section(
-    section: CreateSection,
-    role: Annotated[str, Depends(isAuthorized)],
-    db: db_dependency,
-):
-    if role != "admin":
-        raise HTTPException(
-            status_code=403,
-            detail="You are not authorized to do this action!",
-        )
-
+async def create_section(section: CreateSection, db: db_dependency):
     # Validate program_id
     program_exists = db.query(model.Program).filter_by(program_id=section.program_id).first()
     if not program_exists:
@@ -278,175 +311,230 @@ async def create_section(
             detail=f"Program with ID {section.program_id} does not exist.",
         )
 
-    section_id = str(uuid.uuid4())
-    db_new_section = model.Section(
+    section_id = str(uuid.uuid4())  # Generate a unique section ID
+
+    # Create a new section object without section_status
+    db_section = model.Section(
         section_id=section_id,
         section_name=section.section_name,
+        year_level=section.year_level,
         program_id=section.program_id,
         current_student=section.current_student,
         schedule=section.schedule,
     )
 
-    try:
-        db.add(db_new_section)
-        db.commit()
-        db.refresh(db_new_section)
-        return {"message": "Section created successfully", "section_id": section_id}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=f"An error occurred while creating the section: {str(e)}",
-        )
+    db.add(db_section)
+    db.commit()
+
+    return {"message": "Section created successfully", "section_id": section_id}
+
+
     
+#Get Section
+@admin_router.get("/get_all_section", status_code=status.HTTP_200_OK)
+async def get_all_section(db: db_dependency):
+    get_all_sections = db.query(model.Section).all()
+
+    return{"sections": get_all_sections}
 
 
-
-
-
-#CRUD SECTION STUDENT
-# Get all Student from Admin Dashboard Student List
-@admin_router.get("/get_all_student", status_code=status.HTTP_200_OK)
-async def get_all_student(
-    db: db_dependency,
-    status: str = None,
-    program_id: str = None,
-    level: int = None
+#Filtered Sections by program
+@admin_router.get("/get_filtered_sections_by_program", response_model=List[SectionBase])
+async def get_filtered_sections_by_program(
+    program_name: str = Query(...),  # program_name is required
+    db: Session = Depends(db_dependency)
 ):
+    if not program_name:
+        return {"message": "Program name is required"}
+    
+    print(f"Received program name: {program_name}")  # Debug log
+
     try:
-        # Start with base query
-        query = (
-            db.query(
-                model.Student.student_id,
-                model.Student.level,
-                model.Student.student_status,
-                model.User.firstname,
-                model.User.lastname,
-                model.User.username,
-                model.Student.program_id,  # Added program_id to join the program table
-                model.Section.section_name,
-                model.Student.grade  # Assuming this field exists
-            )
-            .join(model.User, model.Student.user_id == model.User.user_id)
-            .join(model.Program, model.Student.program_id == model.Program.program_id)
-            .join(model.Section, model.Student.section_id == model.Section.section_id)
-        )
+        filtered_sections = db.query(model.Section).filter(
+            model.Section.program_name.ilike(f"%{program_name}%")
+        ).all()
 
-        # Apply filters if provided
-        if status:
-            query = query.filter(model.Student.student_status == status)
-        if program_id:
-            query = query.filter(model.Student.program_id == program_id)
-        if level:
-            query = query.filter(model.Student.level == level)
+        if not filtered_sections:
+            return {"message": "No sections found for the selected program"}
 
-        # Execute query
-        students_query = query.all()
+        return filtered_sections
+    except Exception as e:
+        print(f"Error filtering sections by program: {e}")
+        return {"message": f"Error fetching filtered sections: {e}"}
+
+
+#Update Section
+@admin_router.put("/section/{section_id}", status_code=status.HTTP_202_ACCEPTED)
+async def update_section(section_id: str, section_edit: SectionUpdate, db: db_dependency):
+    # Query the section to see if it exists
+    get_section = db.query(model.Section).filter(model.Section.section_id == section_id).first()
+    
+    if get_section is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Section not found")
+    
+    # Debugging: Log the incoming values for update
+    print(f"Attempting to update section {section_id} with data: {section_edit.dict()}")
+
+    # Update only the fields that have a value
+    if section_edit.section_name is not None:
+        get_section.section_name = section_edit.section_name
+    if section_edit.year_level is not None:
+        get_section.year_level = section_edit.year_level
+    if section_edit.program_id is not None:
+        get_section.program_id = section_edit.program_id
+    if section_edit.current_student is not None:
+        get_section.current_student = section_edit.current_student
+    if section_edit.schedule is not None:
+        get_section.schedule = section_edit.schedule
+
+    # Commit changes to the database
+    db.commit()
+
+    # Debugging: Check if the section was updated
+    print(f"Section after update: {get_section}")
+
+    return {"message": "Section has been updated successfully!"}
+
+
+#delete section
+@admin_router.delete("/section/{section_id}", status_code=status.HTTP_202_ACCEPTED)
+async def delete_section(section_id: str, db: db_dependency):
+    get_section = db.query(model.Section).filter(model.Section.section_id == section_id).first()
+
+    if get_section is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Section not found")
+    
+    db.delete(get_section)
+    db.commit()
+        
+
+#CRUD STUDENT
+
+#Get Student
+@admin_router.get("/get_all_student", status_code=status.HTTP_200_OK)
+async def get_all_student(db: db_dependency):
+    try:
+        # Fetch all students with their related data in a single query
+        get_all_students = db.query(
+            model.Student.student_id,
+            model.Student.year_level,
+            model.Student.student_status,
+            model.Student.current_gpa,
+            model.Student.gpax,
+            model.Student.number_course,
+            model.User.firstname,
+            model.User.lastname,
+            model.User.username,
+            model.Program.program_name,
+            model.Section.section_name
+        ).join(
+            model.User, 
+            model.Student.user_id == model.User.user_id
+        ).join(
+            model.Program, 
+            model.Student.program_id == model.Program.program_id
+        ).join(
+            model.Section, 
+            model.Student.section_id == model.Section.section_id
+        ).all()
 
         students = []
-        for student in students_query:
-            # Fetch program_name using program_id, similar to how it's done in courses
-            program = db.query(model.Program.program_name).filter(
-                model.Program.program_id == student.program_id
-            ).first()
-
+        for student in get_all_students:
             students.append({
                 "student_id": student.student_id,
                 "name": f"{student.firstname} {student.lastname}",
-                "program": program.program_name if program else None,  # Use program_name from Program table
-                "year_level": student.level,
+                "program": student.program_name,
+                "year_level": student.year_level,
                 "section": student.section_name,
                 "email": student.username,
-                "current_grade": student.grade  # Assuming grade is the current grade
+                "current_gpa": student.current_gpa,
+                "gpax": student.gpax,
+                "number_course": student.number_course,
+                "status": student.student_status
             })
 
-        return {"students": students}
+        return {
+            "status": "success",
+            "message": "Students retrieved successfully",
+            "total_students": len(students),
+            "students": students
+        }
 
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch students: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while retrieving students: {str(e)}"
         )
 
+#Update Student
+@admin_router.put("/update_student/{student_id}", status_code=status.HTTP_200_OK)
+async def update_student(student_id: int, student_data: dict, db: db_dependency):
+    try:
+        # Find the student and related user
+        student = db.query(model.Student).filter(model.Student.student_id == student_id).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+        
+        user = db.query(model.User).filter(model.User.user_id == student.user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
+        # Update the User table with firstname, lastname, and email
+        user.firstname = student_data.get("firstname", user.firstname)
+        user.lastname = student_data.get("lastname", user.lastname)
+        user.username = student_data.get("email", user.username)
 
+        # Update the Student table
+        student.program_id = student_data.get("program_id", student.program_id)
+        student.year_level = student_data.get("year_level", student.year_level)
+        student.section_id = student_data.get("section_id", student.section_id)
+        student.current_gpa = student_data.get("current_gpa", student.current_gpa)
 
-#Delete Student From Admin Dashboard Student List
-@admin_router.delete("/delete_student/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
+        db.commit()
+
+        return {"status": "success", "message": "Student updated successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+#Delete Student
+@admin_router.delete("/delete_student/{student_id}", status_code=status.HTTP_200_OK)
 async def delete_student(student_id: str, db: db_dependency):
-    # First, check if the student exists
-    student = db.query(model.Student).filter(model.Student.student_id == student_id).first()
+    try:
+        # Check if student exists
+        student = db.query(model.Student).filter(model.Student.student_id == student_id).first()
+        if not student:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Student with ID {student_id} not found"
+            )
+
+        # Get user_id before deleting student
+        user_id = student.user_id
+
+        # Delete student record
+        db.delete(student)
+
+        # Delete associated user record
+        user = db.query(model.User).filter(model.User.user_id == user_id).first()
+        if user:
+            db.delete(user)
+
+        db.commit()
+
+        return {
+            "message": "Student and associated user account deleted successfully",
+            "deleted_student_id": student_id
+        }
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while deleting student: {str(e)}"
+        )
     
-    if not student:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
-    
-    # Now delete the student record
-    db.delete(student)
-    db.commit()
-
-    # Return a response (204 No Content signifies successful deletion)
-    return {"message": "Student deleted successfully"}
-
-#Update Student From Admin Dashboard Student List
-# @admin_router.put("/update_student/{student_id}", status_code=status.HTTP_200_OK)
-# async def update_student(
-#     student_id: int,
-#     student_data: UpdateStudent,
-#     db: db_dependency
-# ):
-#     try:
-#         # Query the student by student_id
-#         student = db.query(model.Student).filter(model.Student.student_id == student_id).first()
-
-#         if not student:
-#             raise HTTPException(
-#                 status_code=404,
-#                 detail="Student not found"
-#             )
-
-#         # Split name into first and last names
-#         first_name, last_name = student_data.name.split(' ', 1)
-
-#         # Update the student fields
-#         student.program_id = student_data.program_id
-#         student.section_id = student_data.section_id
-#         student.level = student_data.level
-
-#         # Update User table with the new name and email
-#         user = db.query(model.User).filter(model.User.user_id == student.user_id).first()
-#         if user:
-#             user.firstname = first_name
-#             user.lastname = last_name
-#             user.username = student_data.email
-#         else:
-#             raise HTTPException(
-#                 status_code=404,
-#                 detail="User associated with student not found"
-#             )
-
-#         # Commit the changes to the database
-#         db.commit()
-
-#         # Refresh the updated student to reflect the changes in the response
-#         db.refresh(student)
-#         db.refresh(user)
-
-#         # Return updated student details
-#         return {
-#             "student_id": student.student_id,
-#             "program_id": student.program_id,
-#             "section_id": student.section_id,
-#             "level": student.level,
-#             "name": f"{user.firstname} {user.lastname}",
-#             "email": user.username
-#         }
-
-#     except Exception as e:
-#         db.rollback()  # Rollback in case of an error
-#         raise HTTPException(
-#             status_code=500,
-#             detail=f"Failed to update student: {str(e)}"
-#         )
 
 # #CRUD TEACHER
 # @admin_router.get("/get_all_teacher", status_code=status.HTTP_200_OK)

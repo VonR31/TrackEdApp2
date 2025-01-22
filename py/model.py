@@ -1,4 +1,5 @@
 from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, Float, Enum, TEXT
+from sqlalchemy.orm import relationship
 from database import Base
 
 # Table student
@@ -10,8 +11,7 @@ class Student(Base):
     section_id = Column(String(255), ForeignKey('section.section_id'), nullable=False)
     current_gpa = Column(Float, nullable=False)
     gpax = Column(Float, nullable=False)
-    credits = Column(Float, nullable=False)
-    level = Column(Integer, nullable=False)
+    year_level = Column(Integer, nullable=False)
     number_course = Column(Integer, nullable=False)
     student_status = Column(Enum("Active","Inactive","Graduated","Suspended","Expelled", name="student_status_enum"), nullable=False) 
 
@@ -61,22 +61,30 @@ class Teacher(Base):
     teacher_id = Column(String(255), primary_key=True, nullable=False)
     user_id = Column(String(255), ForeignKey('user.user_id'), nullable=False)
     num_course_owned = Column(Integer, nullable=False)
-# Table program
+
 class Program(Base):
     __tablename__ = 'program'
+    
     program_id = Column(String(255), primary_key=True, nullable=False)
     program_name = Column(String(255), nullable=False)
     program_details = Column(String(255), nullable=False)
     req_credits = Column(Integer, nullable=False)
 
-#Table Section
+    # Establish a relationship with Section
+    sections = relationship("Section", back_populates="program")
+
 class Section(Base):
     __tablename__ = 'section'
+
     section_id = Column(String(255), primary_key=True, nullable=False)
-    section_name = Column(String(255), nullable=False)   
+    section_name = Column(String(255), nullable=False)
     program_id = Column(String(255), ForeignKey('program.program_id'), nullable=False)
+    year_level = Column(Integer, nullable=False)
     current_student = Column(Integer)
     schedule = Column(String(255), nullable=False)
+
+    # Establish relationship with Program
+    program = relationship("Program", back_populates="sections")
 
 # Table course
 class Course(Base):

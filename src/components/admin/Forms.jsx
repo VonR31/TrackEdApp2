@@ -154,25 +154,93 @@ const AddTeacherForm = ({ darkMode, onClose, onSubmit }) => {
 };
 
 // Add Student Form Component
+
 const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
+    password: "student123",
     program: "",
     yearLevel: "",
     section: "",
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
+  const [programs, setPrograms] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch programs when the component is mounted
+  useEffect(() => {
+    async function fetchPrograms() {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/admin/get_all_program"
+        );
+        const data = await response.json();
+        setPrograms(data.programs);
+      } catch (error) {
+        console.error("Error fetching programs:", error);
+      }
+    }
+
+    fetchPrograms();
+  }, []);
+
+  // Function to fetch sections based on selected program
+  const fetchSections = async (programName) => {
+    try {
+      const encodedProgramName = encodeURIComponent(programName); // Ensure program name is properly encoded
+      console.log("Encoded program name:", encodedProgramName); // Log to verify encoding
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/admin/get_filtered_sections_by_program?program_name=${encodedProgramName}`
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Error fetching sections");
+      }
+
+      const data = await response.json();
+      console.log("Fetched sections:", data); // Log the response for debugging
+
+      if (Array.isArray(data)) {
+        setSections(data); // Set the fetched sections
+      } else {
+        throw new Error("Received data is not an array");
+      }
+    } catch (error) {
+      console.error("Error fetching sections:", error); // Log the error
+      setError(error.message); // Set the error message to show it to the user
+      setSections([]); // Reset sections on error
+    }
   };
 
-  const handlePhotoChange = (e) => {
-    if (e.target.files[0]) {
-      setFormData({ ...formData, photo: e.target.files[0] });
+  useEffect(() => {
+    if (formData.program) {
+      fetchSections(formData.program); // Fetch sections when program changes
+    } else {
+      setSections([]); // Reset sections if no program is selected
     }
+  }, [formData.program]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const studentData = {
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      username: formData.email,
+      password: formData.password,
+      program_id: formData.program,
+      year_level: formData.yearLevel,
+      section_id: formData.section,
+      role: "student",
+    };
+
+    onSubmit(studentData); // Submit the data
   };
 
   return (
@@ -239,6 +307,21 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium mb-1">Password</label>
+            <input
+              type="password"
+              className={`w-full p-2 rounded-lg ${
+                darkMode ? "bg-gray-700" : "bg-gray-100"
+              }`}
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              required
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Program</label>
@@ -253,8 +336,11 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
                 required
               >
                 <option value="">Select Program</option>
-                <option value="1"></option>
-                <option value="2"></option>
+                {programs.map((program) => (
+                  <option key={program.program_id} value={program.program_name}>
+                    {program.program_name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -293,12 +379,15 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
               required
             >
               <option value="">Select Section</option>
-              <option value="1">A</option>
-              <option value="2">B</option>
-              <option value="3">C</option>
-              <option value="4">D</option>
+              {sections.map((section) => (
+                <option key={section.section_id} value={section.section_id}>
+                  {section.section_name}
+                </option>
+              ))}
             </select>
           </div>
+
+          {error && <div className="text-red-500 text-sm">{error}</div>}
 
           <div className="flex justify-end space-x-4">
             <button
@@ -325,18 +414,92 @@ const AddStudentForm = ({ darkMode, onClose, onSubmit }) => {
   );
 };
 
-// Add Section Form Component
+//Add Section Form
 const AddSectionForm = ({ darkMode, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     sectionName: "",
-    course: "",
+    programId: "",
     yearLevel: "",
     schedule: "",
+    currentStudent: 0, // Updated field for current students
   });
+  const [programs, setPrograms] = useState([]);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  // Fetch available programs when the form loads
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/admin/get_all_program"
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch programs.");
+        }
+
+        setPrograms(data.programs);
+      } catch (err) {
+        console.error("Error fetching programs:", err);
+        setError("Failed to load programs");
+      }
+    };
+
+    fetchPrograms();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    setError(""); // Clear any previous error
+
+    // Ensure currentStudent is a valid integer
+    const currentStudentNum = parseInt(formData.currentStudent, 10);
+
+    if (isNaN(currentStudentNum) || currentStudentNum < 0) {
+      setError(
+        "Current students must be a valid integer greater than or equal to 0"
+      );
+      return;
+    }
+
+    // Prepare the data to send
+    const sectionData = {
+      section_name: formData.sectionName,
+      program_id: formData.programId,
+      year_level: formData.yearLevel,
+      schedule: formData.schedule,
+      current_student: currentStudentNum,
+    };
+
+    try {
+      // POST request to FastAPI backend
+      const response = await fetch(
+        "http://127.0.0.1:8000/admin/section/create",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(sectionData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 400 && data.detail) {
+          throw new Error(data.detail);
+        }
+        throw new Error("Failed to add section");
+      }
+
+      console.log("Section created successfully:", data);
+      onClose(); // Close the form on success
+    } catch (err) {
+      console.error("Error:", err);
+      setError(err.message || "An unexpected error occurred");
+    }
   };
 
   return (
@@ -352,6 +515,12 @@ const AddSectionForm = ({ darkMode, onClose, onSubmit }) => {
         </button>
       </CardHeader>
       <CardContent>
+        {error && (
+          <div className="mb-4 p-2 bg-red-100 text-red-600 rounded whitespace-pre-line">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -377,15 +546,18 @@ const AddSectionForm = ({ darkMode, onClose, onSubmit }) => {
                 className={`w-full p-2 rounded-lg ${
                   darkMode ? "bg-gray-700" : "bg-gray-100"
                 }`}
-                value={formData.yearLevel}
+                value={formData.programId}
                 onChange={(e) =>
-                  setFormData({ ...formData, yearLevel: e.target.value })
+                  setFormData({ ...formData, programId: e.target.value })
                 }
                 required
               >
                 <option value="">Select Program</option>
-                <option value="1"></option>
-                <option value="2"></option>
+                {programs.map((program) => (
+                  <option key={program.program_id} value={program.program_id}>
+                    {program.program_name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -426,6 +598,23 @@ const AddSectionForm = ({ darkMode, onClose, onSubmit }) => {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Current Students
+            </label>
+            <input
+              type="number"
+              className={`w-full p-2 rounded-lg ${
+                darkMode ? "bg-gray-700" : "bg-gray-100"
+              }`}
+              value={formData.currentStudent}
+              onChange={(e) =>
+                setFormData({ ...formData, currentStudent: e.target.value })
+              }
+              required
+            />
+          </div>
+
           <div className="flex justify-end space-x-4">
             <button
               type="button"
@@ -440,7 +629,7 @@ const AddSectionForm = ({ darkMode, onClose, onSubmit }) => {
             </button>
             <button
               type="submit"
-              className={`px-4 py-2 rounded-lg custom-maroon-button`}
+              className="px-4 py-2 rounded-lg custom-maroon-button"
             >
               Add Section
             </button>

@@ -9,6 +9,8 @@ const baseURL = "http://127.0.0.1:8000";
 
 const StudentsView = ({ darkMode, onBack }) => {
   const [students, setStudents] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [sections, setSections] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
   const [filterYear, setFilterYear] = useState("");
@@ -16,74 +18,155 @@ const StudentsView = ({ darkMode, onBack }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
 
   useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const response = await fetch(`${baseURL}/admin/get_all_student`);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch students");
-        }
-
-        const data = await response.json();
-        console.log(data); // Log the response to check the structure
-        setStudents(data.students || []); // Ensure we set an empty array if `students` is undefined
-      } catch (error) {
-        console.error("Error fetching students:", error);
-      }
-    };
-
     fetchStudents();
+    fetchPrograms();
+    fetchSections();
   }, []);
 
+  const fetchStudents = async () => {
+    try {
+      const response = await fetch(`${baseURL}/admin/get_all_student`);
+      if (!response.ok) throw new Error("Failed to fetch students");
+      const data = await response.json();
+      setStudents(data.students || []);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+    }
+  };
+
+  const fetchPrograms = async () => {
+    try {
+      const response = await fetch(`${baseURL}/admin/get_all_program`);
+      if (!response.ok) throw new Error("Failed to fetch programs");
+      const data = await response.json();
+      setPrograms(data.programs || []);
+    } catch (error) {
+      console.error("Error fetching programs:", error);
+    }
+  };
+
+  const fetchSections = async () => {
+    try {
+      const response = await fetch(`${baseURL}/admin/get_all_section`);
+      if (!response.ok) throw new Error("Failed to fetch sections");
+      const data = await response.json();
+      setSections(data.sections || []);
+    } catch (error) {
+      console.error("Error fetching sections:", error);
+    }
+  };
+
   const editFields = [
-    { key: "name", label: "Name", type: "text" },
     {
-      key: "program",
-      label: "Program",
-      type: "select",
-      options: [
-        { value: "1", label: "Information Technology" },
-        { value: "2", label: "Information Systems" },
-      ],
+      key: "firstname",
+      label: "First Name",
+      type: "text",
     },
     {
-      key: "yearLevel",
+      key: "lastname",
+      label: "Last Name",
+      type: "text",
+    },
+    {
+      key: "program_id",
+      label: "Program",
+      type: "select",
+      options: programs.map((program) => ({
+        value: program.program_id,
+        label: program.program_name,
+      })),
+    },
+    {
+      key: "year_level",
       label: "Year Level",
       type: "select",
       options: [
-        { value: "1", label: "1st Year" },
-        { value: "2", label: "2nd Year" },
-        { value: "3", label: "3rd Year" },
-        { value: "4", label: "4th Year" },
+        { value: 1, label: "1st Year" },
+        { value: 2, label: "2nd Year" },
+        { value: 3, label: "3rd Year" },
+        { value: 4, label: "4th Year" },
       ],
     },
     {
-      key: "section",
+      key: "section_id",
       label: "Section",
       type: "select",
-      options: [
-        { value: "1", label: "A" },
-        { value: "2", label: "B" },
-        { value: "3", label: "C" },
-        { value: "4", label: "D" },
-      ],
+      options: sections.map((section) => ({
+        value: section.section_id,
+        label: section.section_name,
+      })),
     },
-    { key: "email", label: "Email", type: "text" },
+    {
+      key: "email",
+      label: "Email",
+      type: "email",
+    },
+    {
+      key: "current_gpa",
+      label: "Current Grade",
+      type: "number",
+      min: 0,
+      max: 100,
+      step: 0.01,
+    },
   ];
 
   const handleEdit = (student) => {
-    setSelectedStudent(student);
+    const fullName =
+      student.name || `${student.firstname || ""} ${student.lastname || ""}`;
+    const [firstname, ...lastnameParts] = fullName.split(" ");
+    const lastname = lastnameParts.join(" ");
+
+    setSelectedStudent({
+      ...student,
+      firstname,
+      lastname,
+    });
     setIsEditModalOpen(true);
   };
 
-  const handleSave = (updatedStudent) => {
-    setStudents((prevStudents) =>
-      prevStudents.map((student) =>
-        student.student_id === updatedStudent.student_id
-          ? updatedStudent
-          : student
-      )
-    );
+  const handleSave = async (updatedStudent) => {
+    try {
+      console.log("Saving student:", updatedStudent); // Log updated student data to check
+
+      const name = `${updatedStudent.firstname} ${updatedStudent.lastname}`;
+
+      const response = await fetch(
+        `${baseURL}/admin/update_student/${updatedStudent.student_id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...updatedStudent,
+            name, // Combine the first and last name into one field
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to update student");
+
+      fetchStudents(); // Fetch updated students list
+      setIsEditModalOpen(false); // Close modal after save
+      setSelectedStudent(null); // Reset the selected student
+    } catch (error) {
+      console.error("Error updating student:", error);
+    }
+  };
+
+  const handleDelete = async (student) => {
+    if (window.confirm(`Are you sure you want to delete ${student.name}?`)) {
+      try {
+        const response = await fetch(
+          `${baseURL}/admin/delete_student/${student.student_id}`,
+          { method: "DELETE" }
+        );
+
+        if (!response.ok) throw new Error("Failed to delete student");
+        fetchStudents();
+      } catch (error) {
+        console.error("Error deleting student:", error);
+      }
+    }
   };
 
   const filteredStudents = students.filter((student) => {
@@ -92,15 +175,10 @@ const StudentsView = ({ darkMode, onBack }) => {
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesProgram = !filterProgram || student.program === filterProgram;
-    const matchesYear = !filterYear || student.year_level === filterYear;
+    const matchesYear =
+      !filterYear || student.year_level === parseInt(filterYear);
     return matchesSearch && matchesProgram && matchesYear;
   });
-
-  const handleDelete = (student) =>
-    window.confirm(`Are you sure you want to delete ${student.name}?`) &&
-    setStudents((prev) =>
-      prev.filter((s) => s.student_id !== student.student_id)
-    );
 
   return (
     <Card className={`${darkMode ? "bg-gray-800 text-white" : ""}`}>
@@ -132,7 +210,7 @@ const StudentsView = ({ darkMode, onBack }) => {
               key: "yearLevel",
               placeholder: "All Years",
               value: filterYear,
-              options: ["1st Year", "2nd Year", "3rd Year", "4th Year"],
+              options: ["1", "2", "3", "4"],
             },
           ]}
           onFilterChange={(key, value) => {
@@ -148,7 +226,7 @@ const StudentsView = ({ darkMode, onBack }) => {
             { header: "Year Level", key: "year_level" },
             { header: "Section", key: "section" },
             { header: "Email", key: "email" },
-            { header: "Current Grade", key: "current_grade" },
+            { header: "Current Grade", key: "current_gpa" },
           ]}
           data={filteredStudents}
           onEdit={handleEdit}
@@ -165,7 +243,7 @@ const StudentsView = ({ darkMode, onBack }) => {
             onSave={handleSave}
             data={selectedStudent}
             fields={editFields}
-            title="Student"
+            title="Edit Student"
           />
         )}
       </CardContent>
