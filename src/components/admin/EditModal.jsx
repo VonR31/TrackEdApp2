@@ -6,7 +6,6 @@ const EditModal = ({ isOpen, onClose, onSave, data, fields, title }) => {
 
   useEffect(() => {
     setFormData(data);
-    console.log(data);
   }, [data]);
 
   const handleSubmit = (e) => {
@@ -16,6 +15,64 @@ const EditModal = ({ isOpen, onClose, onSave, data, fields, title }) => {
   };
 
   if (!isOpen) return null;
+
+  const renderField = (field) => {
+    switch (field.type) {
+      case "select":
+        return (
+          <select
+            value={formData[field.key] || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, [field.key]: e.target.value })
+            }
+            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select {field.label}</option>
+            {field.options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        );
+
+      case "number":
+        return (
+          <input
+            type="number"
+            value={formData[field.key] || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, [field.key]: e.target.value })
+            }
+            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        );
+
+      case "textarea":
+        return (
+          <textarea
+            value={formData[field.key] || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, [field.key]: e.target.value })
+            }
+            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            rows={4}
+          />
+        );
+
+      default:
+        return (
+          <input
+            type="text"
+            value={formData[field.key] || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, [field.key]: e.target.value })
+            }
+            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        );
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -32,14 +89,7 @@ const EditModal = ({ isOpen, onClose, onSave, data, fields, title }) => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {field.label}
               </label>
-              <input
-                type="text"
-                value={formData[field.key] || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, [field.key]: e.target.value })
-                }
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              {renderField(field)}
             </div>
           ))}
           <div className="flex justify-end gap-2 mt-6">

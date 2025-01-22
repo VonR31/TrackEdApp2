@@ -17,17 +17,23 @@ const TeachersView = ({ darkMode, onBack }) => {
       name: "Joann Lopez",
       employeeId: "T001",
       course: "Technopreneurship",
+      program: "BSIT",
       email: "joann.lopez@example.com",
-      specialization: "Software Development",
     },
   ]);
 
   const editFields = [
-    { key: "name", label: "Name" },
-    { key: "employeeId", label: "Employee ID" }, //Teacher ID
-    { key: "course", label: "Course" },
-    { key: "email", label: "Email" },
-    { key: "specialization", label: "Specialization" },
+    { key: "name", label: "Name", type: "text" },
+    {
+      key: "course",
+      label: "Course",
+      type: "select",
+      options: [
+        { value: "1", label: "Technopreneurship" },
+        { value: "2", label: "Project" },
+      ],
+    },
+    { key: "email", label: "Email", type: "text" },
   ];
 
   const handleEdit = (teacher) => {
@@ -90,11 +96,11 @@ const TeachersView = ({ darkMode, onBack }) => {
         />
         <DataTable
           columns={[
-            { header: "Employee ID", key: "employeeId" },
+            { header: "Teacher ID", key: "employeeId" },
             { header: "Name", key: "name" },
             { header: "Course", key: "course" },
+            { header: "Program", key: "program" },
             { header: "Email", key: "email" },
-            { header: "Specialization", key: "specialization" },
           ]}
           data={filteredTeachers}
           onEdit={handleEdit}

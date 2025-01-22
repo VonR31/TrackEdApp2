@@ -46,7 +46,6 @@ class CreateTeacher(BaseModel):
     first_name: str
     last_name: str
     role:RoleType
-    title: str
     program_id: str
     username: str
     password: str
@@ -181,7 +180,6 @@ async def create_user_teacher(create_teacher: CreateTeacher,role: Annotated[str,
         teacher = model.Teacher(
             teacher_id=get_last_id_teacher(),
             user_id=user_id,
-            title=create_teacher.title,  # Default title
             num_course_owned=0,
         )
         db.add(teacher)

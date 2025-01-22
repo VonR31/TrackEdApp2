@@ -61,8 +61,6 @@ class Teacher(Base):
     teacher_id = Column(String(255), primary_key=True, nullable=False)
     user_id = Column(String(255), ForeignKey('user.user_id'), nullable=False)
     num_course_owned = Column(Integer, nullable=False)
-    title = Column(String(255), nullable=False)
-
 # Table program
 class Program(Base):
     __tablename__ = 'program'
@@ -77,8 +75,8 @@ class Section(Base):
     section_id = Column(String(255), primary_key=True, nullable=False)
     section_name = Column(String(255), nullable=False)   
     program_id = Column(String(255), ForeignKey('program.program_id'), nullable=False)
-    teacher_id = Column(String(255), ForeignKey('teacher.teacher_id'), nullable=False)
-    current_student = Column(Integer) 
+    current_student = Column(Integer)
+    schedule = Column(String(255), nullable=False)
 
 # Table course
 class Course(Base):
@@ -87,7 +85,7 @@ class Course(Base):
     course_code = Column(String(255))
     program_id = Column(String(255), ForeignKey('program.program_id'), nullable=False)
     course_name = Column(String(255), nullable=False)
-    units = Column(Float, nullable=False)
+    units = Column(Integer, nullable=False)
     course_detail = Column(String(255), nullable=False)
     course_status = Column(Boolean,nullable=False)
 

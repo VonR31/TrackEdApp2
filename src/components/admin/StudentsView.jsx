@@ -8,22 +8,25 @@ import EditModal from "./EditModal";
 const baseURL = "http://127.0.0.1:8000";
 
 const StudentsView = ({ darkMode, onBack }) => {
+  const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
   const [filterYear, setFilterYear] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [students, setStudents] = useState([]);
-  const [programs, setPrograms] = useState([]); // Store programs data
 
-  // Fetch students data
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         const response = await fetch(`${baseURL}/admin/get_all_student`);
-        if (!response.ok) throw new Error("Failed to fetch students");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch students");
+        }
+
         const data = await response.json();
-        setStudents(data.students || []);
+        console.log(data); // Log the response to check the structure
+        setStudents(data.students || []); // Ensure we set an empty array if `students` is undefined
       } catch (error) {
         console.error("Error fetching students:", error);
       }
@@ -32,28 +35,40 @@ const StudentsView = ({ darkMode, onBack }) => {
     fetchStudents();
   }, []);
 
-  // Fetch programs data
-  useEffect(() => {
-    const fetchPrograms = async () => {
-      try {
-        const response = await fetch(`${baseURL}/admin/get_all_program`);
-        if (!response.ok) throw new Error("Failed to fetch programs");
-        const data = await response.json();
-        setPrograms(data.programs || []);
-      } catch (error) {
-        console.error("Error fetching programs:", error);
-      }
-    };
-
-    fetchPrograms();
-  }, []);
-
-  //Yearlevel
-  const levels = [
-    { value: "1", label: "1st Year" },
-    { value: "2", label: "2nd Year" },
-    { value: "3", label: "3rd Year" },
-    { value: "4", label: "4th Year" },
+  const editFields = [
+    { key: "name", label: "Name", type: "text" },
+    {
+      key: "program",
+      label: "Program",
+      type: "select",
+      options: [
+        { value: "1", label: "Information Technology" },
+        { value: "2", label: "Information Systems" },
+      ],
+    },
+    {
+      key: "yearLevel",
+      label: "Year Level",
+      type: "select",
+      options: [
+        { value: "1", label: "1st Year" },
+        { value: "2", label: "2nd Year" },
+        { value: "3", label: "3rd Year" },
+        { value: "4", label: "4th Year" },
+      ],
+    },
+    {
+      key: "section",
+      label: "Section",
+      type: "select",
+      options: [
+        { value: "1", label: "A" },
+        { value: "2", label: "B" },
+        { value: "3", label: "C" },
+        { value: "4", label: "D" },
+      ],
+    },
+    { key: "email", label: "Email", type: "text" },
   ];
 
   const handleEdit = (student) => {
@@ -61,32 +76,14 @@ const StudentsView = ({ darkMode, onBack }) => {
     setIsEditModalOpen(true);
   };
 
-  const handleSave = async (updatedStudent) => {
-    try {
-      const response = await fetch(
-        `${baseURL}/admin/update_student/${updatedStudent.student_id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedStudent),
-        }
-      );
-      if (!response.ok) throw new Error("Failed to update student");
-      const result = await response.json();
-
-      setStudents((prev) =>
-        prev.map((student) =>
-          student.student_id === updatedStudent.student_id ? result : student
-        )
-      );
-
-      setIsEditModalOpen(false);
-      setSelectedStudent(null);
-    } catch (error) {
-      console.error("Error updating student:", error);
-    }
+  const handleSave = (updatedStudent) => {
+    setStudents((prevStudents) =>
+      prevStudents.map((student) =>
+        student.student_id === updatedStudent.student_id
+          ? updatedStudent
+          : student
+      )
+    );
   };
 
   const filteredStudents = students.filter((student) => {
@@ -98,6 +95,12 @@ const StudentsView = ({ darkMode, onBack }) => {
     const matchesYear = !filterYear || student.year_level === filterYear;
     return matchesSearch && matchesProgram && matchesYear;
   });
+
+  const handleDelete = (student) =>
+    window.confirm(`Are you sure you want to delete ${student.name}?`) &&
+    setStudents((prev) =>
+      prev.filter((s) => s.student_id !== student.student_id)
+    );
 
   return (
     <Card className={`${darkMode ? "bg-gray-800 text-white" : ""}`}>
@@ -123,22 +126,18 @@ const StudentsView = ({ darkMode, onBack }) => {
               key: "program",
               placeholder: "All Programs",
               value: filterProgram,
-              options: [...new Set(students.map((s) => s.program))].filter(
-                Boolean
-              ),
+              options: [...new Set(students.map((s) => s.program))],
             },
             {
-              key: "year_level",
+              key: "yearLevel",
               placeholder: "All Years",
               value: filterYear,
-              options: [...new Set(students.map((s) => s.year_level))].filter(
-                Boolean
-              ),
+              options: ["1st Year", "2nd Year", "3rd Year", "4th Year"],
             },
           ]}
           onFilterChange={(key, value) => {
             if (key === "program") setFilterProgram(value);
-            if (key === "year_level") setFilterYear(value);
+            if (key === "yearLevel") setFilterYear(value);
           }}
         />
         <DataTable
@@ -149,9 +148,11 @@ const StudentsView = ({ darkMode, onBack }) => {
             { header: "Year Level", key: "year_level" },
             { header: "Section", key: "section" },
             { header: "Email", key: "email" },
+            { header: "Current Grade", key: "current_grade" },
           ]}
           data={filteredStudents}
           onEdit={handleEdit}
+          onDelete={handleDelete}
           darkMode={darkMode}
         />
         {selectedStudent && (
@@ -163,26 +164,8 @@ const StudentsView = ({ darkMode, onBack }) => {
             }}
             onSave={handleSave}
             data={selectedStudent}
-            fields={[
-              { key: "name", label: "Full Name" },
-              { key: "email", label: "Email" },
-              {
-                key: "level",
-                label: "Year Level",
-                type: "dropdown", // Specify dropdown type
-                options: levels, // Use the levels array for dropdown options
-              },
-              {
-                key: "program",
-                label: "Program",
-                type: "dropdown",
-                options: programs.map((program) => ({
-                  value: program.id,
-                  label: program.name,
-                })),
-              },
-              { key: "section", label: "Section" },
-            ]}
+            fields={editFields}
+            title="Student"
           />
         )}
       </CardContent>

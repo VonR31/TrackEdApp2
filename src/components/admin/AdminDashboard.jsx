@@ -68,6 +68,10 @@ const AdminDashboard = () => {
             ...prevStats.courses,
             total: data["Total Courses"] || 0,
           },
+          sections: {
+            ...prevStats.sections,
+            total: data["Total Sections"] || 0,
+          },
         }));
       } catch (error) {
         console.error("Error fetching stats:", error);
