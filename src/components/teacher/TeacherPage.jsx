@@ -20,23 +20,77 @@ const TeacherPage = () => {
       code: "TechnoPre", 
       schedule: "MWF 9:00-10:30 AM",
       sections: ["Section A", "Section B", "Section C"],
-      room: "Room 301"
+      room: "Room 301",
+      color: "blue" // Added color property
     },
     { 
       name: "Ethics", 
       code: "GE108", 
       schedule: "TTH 1:00-2:30 PM",
       sections: ["Section D", "Section E"],
-      room: "Room 205"
+      room: "Room 205",
+      color: "green" // Added color property
     },
     { 
       name: "Project Management", 
       code: "ITElectv3", 
       schedule: "MWF 2:00-3:30 PM",
       sections: ["Section F", "Section G"],
-      room: "Room 405"
+      room: "Room 405",
+      color: "purple" // Added color property
     }
   ];
+
+  // Color scheme mapping for both light and dark modes
+  const getColorScheme = (color, isDark) => {
+    const colorSchemes = {
+      blue: {
+        light: {
+          bg: "bg-blue-50",
+          hover: "hover:bg-blue-100",
+          border: "border-blue-200",
+          text: "text-blue-700"
+        },
+        dark: {
+          bg: "bg-blue-900/30",
+          hover: "hover:bg-blue-800/40",
+          border: "border-blue-700",
+          text: "text-blue-300"
+        }
+      },
+      green: {
+        light: {
+          bg: "bg-green-50",
+          hover: "hover:bg-green-100",
+          border: "border-green-200",
+          text: "text-green-700"
+        },
+        dark: {
+          bg: "bg-green-900/30",
+          hover: "hover:bg-green-800/40",
+          border: "border-green-700",
+          text: "text-green-300"
+        }
+      },
+      purple: {
+        light: {
+          bg: "bg-purple-50",
+          hover: "hover:bg-purple-100",
+          border: "border-purple-200",
+          text: "text-purple-700"
+        },
+        dark: {
+          bg: "bg-purple-900/30",
+          hover: "hover:bg-purple-800/40",
+          border: "border-purple-700",
+          text: "text-purple-300"
+        }
+      }
+    };
+
+    return colorSchemes[color][isDark ? "dark" : "light"];  
+
+  };
 
   // Weekly schedule organized by day
   const weeklySchedule = {
@@ -185,6 +239,7 @@ const TeacherPage = () => {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Announcements card remains the same */}
         <Card className={darkMode ? "bg-gray-800 text-white" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -197,6 +252,7 @@ const TeacherPage = () => {
           </CardContent>
         </Card>
 
+        {/* Updated Subjects card */}
         <Card className={darkMode ? "bg-gray-800 text-white" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -206,23 +262,24 @@ const TeacherPage = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {teacherSubjects.map((subject) => (
-                <button
-                  key={subject.code}
-                  onClick={() => setSelectedSubject(subject)}
-                  className={`w-full p-4 rounded-lg text-left ${
-                    darkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-100 hover:bg-gray-200"
-                  }`}
-                >
-                  <div className="font-medium">{subject.name}</div>
-                  <div className="text-sm opacity-75">
-                    {subject.schedule} | {subject.room}
-                  </div>
-                  <div className="text-sm opacity-75">
-                    {subject.sections.length} sections
-                  </div>
-                </button>
-              ))}
+              {teacherSubjects.map((subject) => {
+                const colorScheme = getColorScheme(subject.color, darkMode);
+                return (
+                  <button
+                    key={subject.code}
+                    onClick={() => setSelectedSubject(subject)}
+                    className={`w-full p-4 rounded-lg text-left border ${colorScheme.bg} ${colorScheme.hover} ${colorScheme.border} transition-colors duration-200`}
+                  >
+                    <div className={`font-medium ${colorScheme.text}`}>{subject.name}</div>
+                    <div className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                      {subject.schedule} | {subject.room}
+                    </div>
+                    <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                      {subject.sections.length} sections
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

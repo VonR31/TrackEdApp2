@@ -11,6 +11,9 @@ import {
   Layout,
   PieChart,
   PlusCircle,
+  School,
+  UserSquare2,
+  GraduationCap
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import {
@@ -353,6 +356,12 @@ const AdminDashboard = () => {
             >
               {key === "courses" ? (
                 <BookOpen size={20} className="mr-3" />
+              ) : key === "teachers" ? (
+                <UserSquare2 size={20} className="mr-3" />
+              ) : key === "students" ? (
+                <GraduationCap size={20} className="mr-3" />
+              ) : key === "sections" ? (
+                <School size={20} className="mr-3" />
               ) : (
                 <Users size={20} className="mr-3" />
               )}

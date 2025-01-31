@@ -582,7 +582,6 @@ const StudentManagement = () => {
                   ))}
                 </select>
               </div>
-
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Grade Type
@@ -598,21 +597,31 @@ const StudentManagement = () => {
                   <option value="final">Final</option>
                 </select>
               </div>
-
               <div>
                 <label className="block text-sm font-medium mb-1">Grade</label>
-                <input
-                  type="number"
+                <select
                   value={gradeValue}
                   onChange={(e) => setGradeValue(e.target.value)}
                   className={`w-full p-2 border rounded-lg ${
-                    darkMode ? "bg-gray-700 text-white" : ""
+                    darkMode
+                      ? "bg-gray-700 text-white border-gray-600"
+                      : "bg-white border-gray-300"
                   }`}
-                  min="0"
-                  max="100"
-                />
+                >
+                  <option value="">Select a grade</option>
+                  <option value="1.00">1.00</option>
+                  <option value="1.25">1.25</option>
+                  <option value="1.50">1.50</option>
+                  <option value="1.75">1.75</option>
+                  <option value="2.00">2.00</option>
+                  <option value="2.25">2.25</option>
+                  <option value="2.50">2.50</option>
+                  <option value="2.75">2.75</option>
+                  <option value="3.00">3.00</option>
+                  <option value="4.00">4.00</option>
+                  <option value="5.00">5.00</option>
+                </select>
               </div>
-
               <div className="flex justify-end space-x-2 pt-4">
                 <button
                   onClick={() => setShowGradeModal(false)}

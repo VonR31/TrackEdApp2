@@ -34,7 +34,7 @@ const DataTable = ({ columns, data, onEdit, onDelete, darkMode }) => (
             {columns.map((column, colIndex) => (
               <td
                 key={colIndex}
-                className={`px-4 py-3 text-sm ${
+                className={`px-4 py-3 text-md ${
                   darkMode ? "text-gray-300" : "text-gray-600"
                 }`}
               >
